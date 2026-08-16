@@ -21,7 +21,7 @@ import {
   type GitRemote,
   type GitStatus,
 } from '../shared/rpc.js'
-import { assertSafe, git, gitOrThrow, literalPathspec, SAFE_BRANCH, SAFE_HASH, SAFE_REMOTE, SAFE_URL, stdoutText } from './git.js'
+import { assertSafe, git, gitOrThrow, SAFE_BRANCH, SAFE_HASH, SAFE_REMOTE, SAFE_URL, stdoutText } from './git.js'
 import { generateCommitMessage } from './commit-message.js'
 
 export const name = 'dsh-git'
@@ -287,10 +287,10 @@ async function gitInit(ctx: Context, cwd: string, signal: AbortSignal): Promise<
 }
 
 async function gitStage(ctx: Context, cwd: string, path: string, signal: AbortSignal): Promise<GitStatus> {
-  await gitOrThrow(ctx.shell, ['add', '--pathspec-from-file=-', '--'], {
+  await gitOrThrow(ctx.shell, ['add', '--pathspec-from-file=-', '--pathspec-file-nul', '--'], {
     cwd,
     signal,
-    stdin: `${literalPathspec(path)}\n`,
+    stdin: `${path}\0`,
   })
   return gitStatus(ctx, cwd, signal)
 }
@@ -301,19 +301,19 @@ async function gitUnstage(ctx: Context, cwd: string, path: string, signal: Abort
   // with `git rm --cached` instead — the worktree file stays put (back to
   // untracked), which is exactly what "unstage" means there.
   if (await hasHead(ctx, cwd, signal)) {
-    await gitOrThrow(ctx.shell, ['restore', '--staged', '--pathspec-from-file=-', '--'], {
+    await gitOrThrow(ctx.shell, ['restore', '--staged', '--pathspec-from-file=-', '--pathspec-file-nul', '--'], {
       cwd,
       signal,
-      stdin: `${literalPathspec(path)}\n`,
+      stdin: `${path}\0`,
     })
   } else {
     // No commits yet → drop the index entry. `-f` overrides git's safety check
     // for the "staged then modified again" case; `--cached` still leaves the
     // worktree file untouched, so nothing in the working tree is lost.
-    await gitOrThrow(ctx.shell, ['rm', '--cached', '-f', '--pathspec-from-file=-', '--'], {
+    await gitOrThrow(ctx.shell, ['rm', '--cached', '-f', '--pathspec-from-file=-', '--pathspec-file-nul', '--'], {
       cwd,
       signal,
-      stdin: `${literalPathspec(path)}\n`,
+      stdin: `${path}\0`,
     })
   }
   return gitStatus(ctx, cwd, signal)
@@ -353,7 +353,7 @@ async function gitCommit(ctx: Context, cwd: string, message: string, signal: Abo
 }
 
 async function gitPush(ctx: Context, cwd: string, signal: AbortSignal): Promise<{ pushed: true }> {
-  await gitOrThrow(ctx.shell, ['push'], { cwd, signal })
+  await gitOrThrow(ctx.shell, ['push'], { cwd, signal, fullAccess: true })
   return { pushed: true }
 }
 
@@ -363,7 +363,7 @@ async function gitPublish(ctx: Context, cwd: string, signal: AbortSignal): Promi
   const remote = assertSafe(remotes[0].name, SAFE_REMOTE, 'remote name')
   // `push -u <remote> HEAD` publishes the current branch under its own name and
   // records it as upstream; `HEAD` avoids ever interpolating a branch name.
-  await gitOrThrow(ctx.shell, ['push', '-u', remote, 'HEAD'], { cwd, signal })
+  await gitOrThrow(ctx.shell, ['push', '-u', remote, 'HEAD'], { cwd, signal, fullAccess: true })
   return gitStatus(ctx, cwd, signal)
 }
 
@@ -379,7 +379,7 @@ async function gitPull(ctx: Context, cwd: string, signal: AbortSignal): Promise<
   // `fetch --all` updates every remote-tracking branch from every configured
   // remote without touching the worktree or current branch; `--prune` drops
   // tracking refs that no longer exist upstream.
-  await gitOrThrow(ctx.shell, ['fetch', '--all', '--prune'], { cwd, signal })
+  await gitOrThrow(ctx.shell, ['fetch', '--all', '--prune'], { cwd, signal, fullAccess: true })
   return gitStatus(ctx, cwd, signal)
 }
 

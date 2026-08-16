@@ -4,6 +4,11 @@
 // `useSyncExternalStore`.
 let open = false
 let lastSessionId: string | undefined
+// Whether the docked details column is actually open (width > 0). Tracked by the
+// docked panel through a ResizeObserver so the floating panel can stand in when
+// the layout closes the column (its close breakpoint depends on the live sidebar
+// width, which a hardcoded viewport breakpoint cannot capture).
+let detailsOpen = true
 const listeners = new Set<() => void>()
 
 function emit(): void {
@@ -34,5 +39,13 @@ export const panelStore = {
   },
   setLastSessionId(id: string | undefined): void {
     lastSessionId = id
+  },
+  isDetailsOpen(): boolean {
+    return detailsOpen
+  },
+  setDetailsOpen(value: boolean): void {
+    if (detailsOpen === value) return
+    detailsOpen = value
+    emit()
   },
 }

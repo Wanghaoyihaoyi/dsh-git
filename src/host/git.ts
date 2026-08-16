@@ -1,18 +1,17 @@
 // Host-side git command wrapper over the harness `ctx.shell` executor.
 //
-// Git runs UNCONFINED (`danger-full-access` sandbox policy). The sandbox's
-// restricted Windows token breaks git's normal operation: schannel (TLS) cannot
-// read the interactive user's credentials (`SEC_E_NO_CREDENTIALS`) and MSYS2
-// `sh.exe` — which git uses to run credential helpers — cannot create its shared
-// memory (`CreateFileMapping … error 5`). Running with the user's full token is
-// exactly how VSCode (and every desktop git client) invokes git, so push/pull
-// and credential helpers work normally. No user git config is touched.
+// Network git ops (push/pull/fetch) run with `danger-full-access`: the sandbox's
+// restricted Windows token breaks schannel (TLS) and MSYS2 `sh.exe` (credential
+// helpers), so they need the user's full token — exactly how VSCode invokes git.
+// Local ops run under `workspace-write` so a stray local command stays confined
+// to the workspace. No user git config is touched.
 //
 // Quoting discipline: we NEVER interpolate user data (paths, messages) into the
 // command string. Messages go via `git commit -F -` (stdin) and paths via
-// `--pathspec-from-file=-` (stdin, one literal pathspec per line), so paths and
-// messages containing spaces/quotes/metacharacters cannot break the shell or
-// escape the command.
+// `--pathspec-from-file=- --pathspec-file-nul` (stdin, NUL-separated literal
+// pathspecs), so paths and messages containing spaces/quotes/newlines/
+// metacharacters cannot break the shell, the pathspec separator, or escape the
+// command.
 import path from 'node:path'
 import type { ShellExecutor, ShellRunResult } from '@deepseek-ai/dsh-shell'
 
@@ -21,6 +20,13 @@ export interface GitRunOptions {
   signal?: AbortSignal
   /** Bytes written to stdin, then closed. */
   stdin?: string
+  /**
+   * True for network operations (push/pull/fetch) that must talk TLS and use the
+   * credential helper — those need the user's full token (`danger-full-access`).
+   * Everything else runs under `workspace-write` so a purely local git command
+   * stays inside the sandbox's restricted token (defense-in-depth).
+   */
+  fullAccess?: boolean
 }
 
 /** Environment that keeps git non-interactive and output stable for parsing. */
@@ -44,12 +50,11 @@ export async function git(
       stdin: opts.stdin,
       stdoutMaxBytes: STDOUT_CAP,
       env: GIT_ENV,
-      // `danger-full-access` deliberately bypasses the sandbox backend (the
-      // executor runs the command through the plain local runner), so git keeps
-      // the user's full Windows token. `workspaceRoot` is carried but unused
-      // under this mode; it must still be an absolute path.
+      // Network git ops need the full user token (TLS + credential helpers);
+      // local ops stay confined to the workspace so a stray local command can't
+      // touch the whole filesystem/credential store.
       sandboxPolicy: {
-        mode: 'danger-full-access',
+        mode: opts.fullAccess ? 'danger-full-access' : 'workspace-write',
         workspaceRoot: path.resolve(opts.cwd ?? process.cwd()),
       },
     }),
@@ -76,11 +81,6 @@ export async function gitOrThrow(
     throw new Error(`git ${args[0]} failed: ${detail}`)
   }
   return result
-}
-
-/** Escape a pathspec so glob metacharacters are taken literally. */
-export function literalPathspec(path: string): string {
-  return `:(literal)${path}`
 }
 
 // Safe-character classes for user-supplied git names/urls. These values are

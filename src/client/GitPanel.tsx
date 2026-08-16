@@ -38,8 +38,22 @@ export interface GitPanelProps extends GlobalStandardProps {
 
 export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, mode, t }: GitPanelProps) {
   const open = useSyncExternalStore(panelStore.subscribe, panelStore.isOpen)
+  const detailsOpen = useSyncExternalStore(panelStore.subscribe, panelStore.isDetailsOpen)
   const isNarrow = useIsNarrow()
-  const visible = open && (mode === 'floating' ? isNarrow : !isNarrow)
+  // The layout's `details` column is session-scoped: it renders nothing and is
+  // forced closed while there is no non-blank current session (the New Session /
+  // blank view). Track that so the root-scoped floating overlay can stand in.
+  const hasDetailsSession = useSessions((state) => {
+    const current = state.current
+    return current !== undefined && state.byId[current]?.blank === false
+  })
+  // The floating overlay stands in when: the viewport is narrow, OR there is no
+  // non-blank session (details column unavailable), OR the details column is
+  // actually closed (its close breakpoint depends on the live sidebar width).
+  const visible = open && (mode === 'floating'
+    ? (isNarrow || !hasDetailsSession || !detailsOpen)
+    : !isNarrow)
+  const rootRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<GitStatus | null>(null)
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
@@ -80,6 +94,21 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
       openGit()
     }
   }, [currentSessionId, mode, openGit])
+
+  // Track the docked column's ACTUAL width so the floating panel can stand in
+  // whenever the layout closes it. The layout's close breakpoint is
+  // `sidebarWidth + 940px` (dynamic), so the hardcoded narrow breakpoint is not
+  // enough — observing the column width is the only precise signal.
+  useEffect(() => {
+    if (mode !== 'docked') return
+    const el = rootRef.current
+    if (el === null) return
+    const update = () => panelStore.setDetailsOpen(el.getBoundingClientRect().width > 1)
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [mode, visible])
 
   const refresh = useCallback(async () => {
     if (!cwd) return
@@ -257,7 +286,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const panelClass = mode === 'floating' ? 'dshgit-panel-floating' : 'dshgit-panel'
 
   return (
-    <div className={rootClass}>
+    <div className={rootClass} ref={rootRef}>
       <div className={panelClass}>
         <header className="dshgit-header">
           <div className="dshgit-title-row">
