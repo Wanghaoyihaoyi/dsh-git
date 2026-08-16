@@ -3,7 +3,7 @@
 // with the file list. Graph lines are drawn as SVG (continuous across rows) with
 // git's own lane colors; rows are virtualized and a commit expands inline to its
 // changed-files list, while hovering it shows a detail popover on the left.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { UIEvent } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { GitApi } from './rpc.js'
@@ -16,6 +16,8 @@ const OVERSCAN = 8
 const FILE_ROW_H = 22
 const FILES_PAD = 8
 const NOTE_H = 28
+/** Vertical padding kept between the hover card and the viewport edges. */
+const HOVER_MARGIN = 8
 /** Poll interval for auto-refreshing the history graph while it is expanded. */
 const HISTORY_POLL_MS = 4000
 
@@ -145,9 +147,11 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
   const [viewportHeight, setViewportHeight] = useState(0)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [details, setDetails] = useState<Map<string, DetailState>>(new Map())
-  const [hover, setHover] = useState<{ hash: string; top: number; right: number } | null>(null)
+  const [hover, setHover] = useState<{ hash: string; rowTop: number; right: number } | null>(null)
+  const [hoverTop, setHoverTop] = useState(0)
   const [copied, setCopied] = useState(false)
   const viewportRef = useRef<HTMLDivElement>(null)
+  const hoverRef = useRef<HTMLDivElement>(null)
   const hoverTimer = useRef<number | undefined>(undefined)
   const inFlight = useRef(new Set<string>())
   const copiedTimer = useRef<number | undefined>(undefined)
@@ -243,7 +247,8 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
   const showPopover = useCallback((hash: string, el: HTMLElement) => {
     clearHoverTimer()
     const rect = el.getBoundingClientRect()
-    setHover({ hash, top: rect.top, right: window.innerWidth - rect.left + 8 })
+    setHover({ hash, rowTop: rect.top, right: window.innerWidth - rect.left + 8 })
+    setHoverTop(rect.top)
     void ensureDetail(hash)
   }, [clearHoverTimer, ensureDetail])
 
@@ -306,6 +311,21 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
   const hoverCommit = hover !== null && rows !== null
     ? rows.find((row) => row.commit?.hash === hover.hash)?.commit
     : undefined
+
+  // Clamp the hover card vertically so it never overflows the viewport: start
+  // with its top aligned to the hovered row, then shift it up when its bottom
+  // would run past the viewport edge. Re-runs as the detail loads (the card
+  // grows from the loading note to the full message + meta block), so it stays
+  // inside the viewport at every height.
+  useLayoutEffect(() => {
+    const el = hoverRef.current
+    if (el === null || hover === null) return
+    const height = el.getBoundingClientRect().height
+    // The card's max-height is 60vh, so a viewport floor of HOVER_MARGIN always
+    // leaves room; Math.max guards against a pathological oversized card.
+    const maxTop = Math.max(HOVER_MARGIN, window.innerHeight - height - HOVER_MARGIN)
+    setHoverTop(Math.max(HOVER_MARGIN, Math.min(hover.rowTop, maxTop)))
+  }, [hover, hoverDetail])
 
   return (
     <div className={`dshgit-history${open ? ' dshgit-history-open' : ''}`}>
@@ -379,7 +399,8 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
       {hover !== null ? (
         <div
           className="dshgit-hover"
-          style={{ top: hover.top, right: hover.right }}
+          ref={hoverRef}
+          style={{ top: hoverTop, right: hover.right }}
           onMouseEnter={clearHoverTimer}
           onMouseLeave={scheduleHide}
         >
