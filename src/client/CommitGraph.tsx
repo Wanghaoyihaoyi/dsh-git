@@ -5,6 +5,7 @@
 // changed-files list, while hovering it shows a detail popover on the left.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { UIEvent } from 'react'
+import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { GitApi } from './rpc.js'
 import type { GitCommitDetail, GitGraphCell, GitLogRow } from '../shared/rpc.js'
 import { CopyIcon, RefreshIcon } from './icons.js'
@@ -25,6 +26,7 @@ export interface CommitGraphProps {
   git: GitApi
   cwd: string
   onError: (message: string | null) => void
+  t: TranslateNS<'git'>
 }
 
 function refLabel(ref: string): string {
@@ -100,16 +102,16 @@ function GraphSvg({ cells, width, height }: { cells: GitGraphCell[]; width: numb
   )
 }
 
-function FilesBlock({ state }: { state: DetailState | undefined }) {
+function FilesBlock({ state, t }: { state: DetailState | undefined; t: TranslateNS<'git'> }) {
   if (state === undefined || state.status === 'loading') {
-    return <div className="dshgit-log-files-note">加载中…</div>
+    return <div className="dshgit-log-files-note">{t('loading')}</div>
   }
   if (state.status === 'error') {
     return <div className="dshgit-log-files-note dshgit-log-files-error">{state.message}</div>
   }
   const files = state.data.files
   if (files.length === 0) {
-    return <div className="dshgit-log-files-note">无文件改动</div>
+    return <div className="dshgit-log-files-note">{t('noFileChanges')}</div>
   }
   return (
     <div className="dshgit-log-files">
@@ -123,7 +125,7 @@ function FilesBlock({ state }: { state: DetailState | undefined }) {
   )
 }
 
-export function CommitGraph({ git, cwd, onError }: CommitGraphProps) {
+export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
   const [open, setOpen] = useState(false)
   const [rows, setRows] = useState<GitLogRow[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -268,11 +270,11 @@ export function CommitGraph({ git, cwd, onError }: CommitGraphProps) {
       <div className="dshgit-history-head" onClick={toggle}>
         <span className="dshgit-history-left">
           <span className="dshgit-history-caret">{open ? '▾' : '▸'}</span>
-          <span className="dshgit-history-title">提交历史</span>
+          <span className="dshgit-history-title">{t('history')}</span>
         </span>
         <button
           className="dshgit-ghost"
-          title="刷新提交历史"
+          title={t('refreshHistory')}
           disabled={loading}
           onClick={(event) => {
             event.stopPropagation()
@@ -286,9 +288,9 @@ export function CommitGraph({ git, cwd, onError }: CommitGraphProps) {
       {open ? (
         <div className="dshgit-log-viewport" ref={viewportRef} onScroll={onScroll}>
           {loading || rows === null ? (
-            <div className="dshgit-log-empty">{loading ? '加载中…' : ''}</div>
+            <div className="dshgit-log-empty">{loading ? t('loading') : ''}</div>
           ) : rows.length === 0 ? (
-            <div className="dshgit-log-empty">无提交历史</div>
+            <div className="dshgit-log-empty">{t('noHistory')}</div>
           ) : (
             <div style={{ height: totalHeight, position: 'relative' }}>
               {rows.slice(start, end).map((row, index) => {
@@ -321,7 +323,7 @@ export function CommitGraph({ git, cwd, onError }: CommitGraphProps) {
                     ) : null}
                     {isExpanded ? (
                       <div style={{ position: 'absolute', top: ROW_H, left: graphWidth + 6, right: 0 }}>
-                        <FilesBlock state={details.get(commit.hash)} />
+                        <FilesBlock state={details.get(commit.hash)} t={t} />
                       </div>
                     ) : null}
                   </div>
@@ -340,25 +342,25 @@ export function CommitGraph({ git, cwd, onError }: CommitGraphProps) {
           onMouseLeave={scheduleHide}
         >
           {hoverDetail === undefined || hoverDetail.status === 'loading' ? (
-            <div className="dshgit-hover-note">加载中…</div>
+            <div className="dshgit-hover-note">{t('loading')}</div>
           ) : hoverDetail.status === 'error' ? (
             <div className="dshgit-hover-note dshgit-hover-error">{hoverDetail.message}</div>
           ) : (
             <>
               <div className="dshgit-hover-message">{hoverDetail.data.message}</div>
               <div className="dshgit-hover-meta">
-                <div><span className="dshgit-hover-label">作者</span>{hoverDetail.data.author}</div>
-                <div><span className="dshgit-hover-label">日期</span>{formatDate(hoverDetail.data.date)}</div>
+                <div><span className="dshgit-hover-label">{t('author')}</span>{hoverDetail.data.author}</div>
+                <div><span className="dshgit-hover-label">{t('date')}</span>{formatDate(hoverDetail.data.date)}</div>
               </div>
               <div className="dshgit-hover-hash">
                 <span className="dshgit-hover-hash-value">{hoverCommit?.shortHash ?? hover.hash.slice(0, 7)}</span>
                 <button
                   type="button"
                   className="dshgit-hover-copy"
-                  title="复制完整 hash"
+                  title={t('copyHash')}
                   onClick={() => copyHash(hoverDetail.data.hash)}
                 >
-                  {copied ? <span className="dshgit-hover-copied">已复制</span> : <CopyIcon size={14} />}
+                  {copied ? <span className="dshgit-hover-copied">{t('copied')}</span> : <CopyIcon size={14} />}
                 </button>
               </div>
             </>

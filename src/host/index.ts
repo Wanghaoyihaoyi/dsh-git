@@ -359,7 +359,7 @@ async function gitPush(ctx: Context, cwd: string, signal: AbortSignal): Promise<
 
 async function gitPublish(ctx: Context, cwd: string, signal: AbortSignal): Promise<GitStatus> {
   const remotes = await gitRemotes(ctx, cwd, signal)
-  if (remotes.length === 0) throw new Error('没有配置远程仓库，无法发布分支')
+  if (remotes.length === 0) throw new Error('no remote configured; cannot publish branch')
   const remote = assertSafe(remotes[0].name, SAFE_REMOTE, 'remote name')
   // `push -u <remote> HEAD` publishes the current branch under its own name and
   // records it as upstream; `HEAD` avoids ever interpolating a branch name.
@@ -550,7 +550,7 @@ async function gitBranchCreate(ctx: Context, cwd: string, name: string, signal: 
   // nothing to point at, and `git branch` fails with the cryptic
   // "not a valid object name: 'main'". Fail with an actionable message instead.
   if (!(await hasHead(ctx, cwd, signal))) {
-    throw new Error('仓库还没有任何提交，请先提交一次后再创建分支')
+    throw new Error('no commits yet; commit once before creating a branch')
   }
   await gitOrThrow(ctx.shell, ['branch', safeName], { cwd, signal })
   return gitBranches(ctx, cwd, signal)

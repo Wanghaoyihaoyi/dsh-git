@@ -122,7 +122,7 @@ export async function generateCommitMessage(
 
   let summary = parts.join('\n').trim()
   if (summary.length === 0) {
-    throw new Error('没有可提交的改动')
+    throw new Error('no changes to commit')
   }
   if (summary.length > maxDiffChars) {
     summary = `${summary.slice(0, maxDiffChars)}\n[diff truncated at ${maxDiffChars} characters]`

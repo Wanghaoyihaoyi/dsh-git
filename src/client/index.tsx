@@ -8,8 +8,10 @@
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
 import type { ConnectionHandle } from '@deepseek-ai/dsh-client-connection/client'
 import type { ILayout } from '@deepseek-ai/dsh-client-ui-layout/client'
+import type { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { GitPanel } from './GitPanel.js'
 import { GitToggleButton } from './GitToggleButton.js'
+import { gitEn, gitZh } from './locale.js'
 import { panelStore } from './panelStore.js'
 import { createGitApi } from './rpc.js'
 import { PANEL_CSS } from './styles.js'
@@ -17,9 +19,10 @@ import { PANEL_CSS } from './styles.js'
 export const name = 'dsh-git-client'
 // `layout` is injected so this plugin applies after ui-layout has declared the
 // `details` seat and provides `ctx.layout`; `slots` is the registry; `connection`
-// carries RPC. The `ILayout` import loads the ui-layout type merges; the
-// `ConnectionHandle` import loads `ctx.connection`.
-export const inject = ['slots', 'layout', 'connection']
+// carries RPC; `locale` provides `ctx.locale.register` for the git dictionary.
+// The `ILayout` import loads the ui-layout type merges; the `ConnectionHandle`
+// import loads `ctx.connection`.
+export const inject = ['slots', 'layout', 'connection', 'locale']
 
 const STYLE_TAG_ID = '@majiexuan/dsh-git/panel.css'
 
@@ -35,6 +38,8 @@ function injectStyles() {
 
 export function apply(ctx: ClientContext) {
   injectStyles()
+  const locale: LocaleRuntime = ctx.locale
+  ctx.effect(() => locale.register('git', { zh: gitZh, en: gitEn }))
   // The client connection has no static Context augmentation (the host does);
   // the shipped api-gateway client resolves it the same way.
   const connection = ctx.get('connection') as ConnectionHandle | undefined
@@ -61,14 +66,14 @@ export function apply(ctx: ClientContext) {
   // Docked panel (wide viewport): the right `details` column. `priority: -1`
   // shadows the shipped tool-output details panel (lowest priority renders).
   ctx.slots.register(
-    { name: 'details', priority: -1, inject: () => ({ git, closeGit, openGit, mode: 'docked' as const }) },
+    { name: 'details', priority: -1, locale: 'git', inject: () => ({ git, closeGit, openGit, mode: 'docked' as const }) },
     GitPanel,
   )
 
   // Floating panel (narrow viewport): the details column auto-closes below
   // `sidebar + 940px`, so fall back to the frame-wide overlay surface.
   ctx.slots.register(
-    { name: 'shell.overlay', id: '@majiexuan/dsh-git/panel', inject: () => ({ git, closeGit, openGit, mode: 'floating' as const }) },
+    { name: 'shell.overlay', id: '@majiexuan/dsh-git/panel', locale: 'git', inject: () => ({ git, closeGit, openGit, mode: 'floating' as const }) },
     GitPanel,
   )
 
@@ -79,6 +84,7 @@ export function apply(ctx: ClientContext) {
       {
         name: 'sidebar.footer.action',
         id: '@majiexuan/dsh-git/toggle',
+        locale: 'git',
         inject: () => ({ toggleGit }),
       },
       GitToggleButton,

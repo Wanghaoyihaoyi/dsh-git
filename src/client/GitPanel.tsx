@@ -5,7 +5,7 @@
 // from the global standard hooks and passes it as `cwd` on every RPC call.
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Button, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { GlobalStandardProps } from '@deepseek-ai/dsh-client-ui-slots'
+import type { GlobalStandardProps, TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { GitBranch, GitStatus } from '../shared/rpc.js'
 import type { GitApi } from './rpc.js'
 import { panelStore } from './panelStore.js'
@@ -33,9 +33,10 @@ export interface GitPanelProps extends GlobalStandardProps {
   closeGit: () => void
   openGit: () => void
   mode: 'docked' | 'floating'
+  t: TranslateNS<'git'>
 }
 
-export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, mode }: GitPanelProps) {
+export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, mode, t }: GitPanelProps) {
   const open = useSyncExternalStore(panelStore.subscribe, panelStore.isOpen)
   const isNarrow = useIsNarrow()
   const visible = open && (mode === 'floating' ? isNarrow : !isNarrow)
@@ -152,7 +153,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const handleCheckout = useCallback(
     async (name: string) => {
       if (!cwd || busy) return
-      setBusy('切换分支')
+      setBusy(t('checkout'))
       setError(null)
       try {
         setStatus(await git.branchCheckout(cwd, name))
@@ -163,13 +164,13 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
         setBusy(null)
       }
     },
-    [git, cwd, busy],
+    [git, cwd, busy, t],
   )
 
   const handleCreateBranch = useCallback(
     async (name: string) => {
       if (!cwd || busy) return
-      setBusy('创建分支')
+      setBusy(t('createBranch'))
       setError(null)
       try {
         setBranches(await git.branchCreate(cwd, name))
@@ -179,14 +180,14 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
         setBusy(null)
       }
     },
-    [git, cwd, busy],
+    [git, cwd, busy, t],
   )
 
   const confirmDelete = useCallback(async () => {
     if (!cwd || deleteTarget === null) return
     const target = deleteTarget
     setDeleteTarget(null)
-    setBusy(target.kind === 'branch' ? '删除分支' : '删除远程')
+    setBusy(target.kind === 'branch' ? t('deleteBranch') : t('deleteRemoteRepo'))
     setError(null)
     try {
       if (target.kind === 'branch') {
@@ -199,11 +200,11 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
     } finally {
       setBusy(null)
     }
-  }, [git, cwd, deleteTarget])
+  }, [git, cwd, deleteTarget, t])
 
   const handleAddRemote = useCallback(async () => {
     if (!cwd || busy) return
-    setBusy('添加远程')
+    setBusy(t('addRemote'))
     setError(null)
     try {
       setStatus(await git.remoteAdd(cwd, 'origin', remoteUrl))
@@ -214,11 +215,11 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
     } finally {
       setBusy(null)
     }
-  }, [git, cwd, busy, remoteUrl])
+  }, [git, cwd, busy, remoteUrl, t])
 
   const handlePull = useCallback(async () => {
     if (!cwd || busy) return
-    setBusy('拉取')
+    setBusy(t('pull'))
     setError(null)
     try {
       setStatus(await git.pull(cwd))
@@ -227,7 +228,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
     } finally {
       setBusy(null)
     }
-  }, [git, cwd, busy])
+  }, [git, cwd, busy, t])
 
   if (!visible) return null
 
@@ -246,7 +247,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
       : hasUpstream
         ? (status?.ahead ?? 0) > 0 ? 'push' : 'idle'
         : (status?.unpublished ?? false) ? 'publish' : 'idle'
-  const actionLabel = action === 'push' ? '推送' : action === 'publish' ? '发布分支' : '提交'
+  const actionLabel = action === 'push' ? t('push') : action === 'publish' ? t('publishBranch') : t('commit')
   const actionDisabled =
     busy !== null ||
     (action === 'commit' && message.trim().length === 0) ||
@@ -260,11 +261,11 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
       <div className={panelClass}>
         <header className="dshgit-header">
           <div className="dshgit-title-row">
-            <span className="dshgit-title">源代码管理</span>
-            <button className="dshgit-ghost" title="刷新" onClick={() => void refresh()} disabled={busy !== null}>
+            <span className="dshgit-title">{t('title')}</span>
+            <button className="dshgit-ghost" title={t('refresh')} onClick={() => void refresh()} disabled={busy !== null}>
               <RefreshIcon size={16} />
             </button>
-            <button className="dshgit-ghost" title="关闭" onClick={closeGit}>
+            <button className="dshgit-ghost" title={t('close')} onClick={closeGit}>
               <span style={{ fontSize: 14 }}>✕</span>
             </button>
           </div>
@@ -294,7 +295,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                   <button
                     type="button"
                     className="dshgit-pull"
-                    title="从所有远程存储库拉取所有分支最新代码"
+                    title={t('pullAll')}
                     disabled={busy !== null}
                     onClick={() => void handlePull()}
                   >
@@ -308,7 +309,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                     <button
                       type="button"
                       className="dshgit-remote-dots"
-                      title={`删除远程仓库 ${remote.name}`}
+                      title={t('deleteRemote', { name: remote.name })}
                       onClick={() => setDeleteTarget({ kind: 'remote', name: remote.name })}
                     >
                       •••
@@ -323,34 +324,34 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                       setRemoteModalOpen(true)
                     }}
                   >
-                    创建远程仓库
+                    {t('createRemote')}
                   </button>
                 )}
               </>
             ) : (
               <>
                 <GitIcon size={14} />
-                <span>{!cwd ? '暂无工作区' : !status ? '读取中…' : '非 Git 仓库'}</span>
+                <span>{!cwd ? t('noWorkspace') : !status ? t('loading') : t('notRepo')}</span>
               </>
             )}
           </div>
         </header>
 
         {!cwd ? (
-          <div className="dshgit-empty">尚未打开工作区</div>
+          <div className="dshgit-empty">{t('noWorkspaceOpened')}</div>
         ) : !status ? (
-          <div className="dshgit-empty">正在读取仓库状态…</div>
+          <div className="dshgit-empty">{t('readingStatus')}</div>
         ) : !isRepo ? (
           <div className="dshgit-body">
             <div className="dshgit-empty">
-              <div>当前工作区不是 Git 仓库</div>
+              <div>{t('notRepoBody')}</div>
               <Button
                 variant="primary"
                 size="md"
                 disabled={busy !== null}
-                onClick={() => void run('初始化仓库', () => git.init(cwd))}
+                onClick={() => void run(t('initRepo'), () => git.init(cwd))}
               >
-                初始化 Git 仓库
+                {t('initRepo')}
               </Button>
             </div>
           </div>
@@ -360,18 +361,18 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               <input
                 className="dshgit-input"
                 value={message}
-                placeholder="提交信息"
+                placeholder={t('commitMessagePlaceholder')}
                 onChange={(event) => setMessage(event.target.value)}
                 disabled={busy !== null}
                 spellCheck={false}
               />
               <button
                 className="dshgit-sparkle"
-                title="AI 生成提交信息"
+                title={t('aiGenerate')}
                 disabled={busy !== null || stagedCount === 0 && (status?.unstaged.length ?? 0) === 0}
                 onClick={() => {
                   void (async () => {
-                    setBusy('生成提交信息')
+                    setBusy(t('generating'))
                     setError(null)
                     try {
                       const { requestId } = await git.generateMessageStart(cwd)
@@ -407,7 +408,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               onClick={() => {
                 if (action === 'push') {
                   void (async () => {
-                    setBusy('推送')
+                    setBusy(t('push'))
                     setError(null)
                     try {
                       await git.push(cwd)
@@ -420,7 +421,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                   })()
                 } else if (action === 'publish') {
                   void (async () => {
-                    setBusy('发布分支')
+                    setBusy(t('publishBranch'))
                     setError(null)
                     try {
                       setStatus(await git.publish(cwd))
@@ -431,7 +432,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                     }
                   })()
                 } else {
-                  void run('提交', () => git.commit(cwd, message), () => setMessage(''))
+                  void run(t('commit'), () => git.commit(cwd, message), () => setMessage(''))
                 }
               }}
             >
@@ -442,16 +443,16 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
             <div className="dshgit-group">
               <div className="dshgit-group-head" onClick={() => setStagedOpen((value) => !value)}>
                 <span style={{ fontSize: 10 }}>{stagedOpen ? '▾' : '▸'}</span>
-                <span>暂存的更改</span>
+                <span>{t('stagedChanges')}</span>
                 <span className="dshgit-count">{stagedCount}</span>
                 <span className="dshgit-spacer" />
                 <button
                   className="dshgit-ghost"
-                  title="全部取消暂存"
+                  title={t('unstageAll')}
                   disabled={busy !== null || stagedCount === 0}
                   onClick={(event) => {
                     event.stopPropagation()
-                    void run('全部取消暂存', () => git.unstageAll(cwd))
+                    void run(t('unstageAll'), () => git.unstageAll(cwd))
                   }}
                 >
                   −
@@ -464,9 +465,9 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                     <span className="dshgit-path" title={file.path}>{basename(file.path)}</span>
                     <button
                       className="dshgit-ghost"
-                      title="取消暂存"
+                      title={t('unstage')}
                       disabled={busy !== null}
-                      onClick={() => void run('取消暂存', () => git.unstage(cwd, file.path))}
+                      onClick={() => void run(t('unstage'), () => git.unstage(cwd, file.path))}
                     >
                       −
                     </button>
@@ -478,16 +479,16 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
             <div className="dshgit-group">
               <div className="dshgit-group-head" onClick={() => setUnstagedOpen((value) => !value)}>
                 <span style={{ fontSize: 10 }}>{unstagedOpen ? '▾' : '▸'}</span>
-                <span>更改</span>
+                <span>{t('changes')}</span>
                 <span className="dshgit-count">{status.unstaged.length}</span>
                 <span className="dshgit-spacer" />
                 <button
                   className="dshgit-ghost"
-                  title="全部暂存"
+                  title={t('stageAll')}
                   disabled={busy !== null || status.unstaged.length === 0}
                   onClick={(event) => {
                     event.stopPropagation()
-                    void run('全部暂存', () => git.stageAll(cwd))
+                    void run(t('stageAll'), () => git.stageAll(cwd))
                   }}
                 >
                   +
@@ -500,9 +501,9 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                     <span className="dshgit-path" title={file.path}>{basename(file.path)}</span>
                     <button
                       className="dshgit-ghost"
-                      title="暂存"
+                      title={t('stage')}
                       disabled={busy !== null}
-                      onClick={() => void run('暂存', () => git.stage(cwd, file.path))}
+                      onClick={() => void run(t('stage'), () => git.stage(cwd, file.path))}
                     >
                       +
                     </button>
@@ -511,7 +512,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               ) : null}
             </div>
             </div>
-            <CommitGraph git={git} cwd={cwd} onError={setError} />
+            <CommitGraph git={git} cwd={cwd} onError={setError} t={t} />
           </div>
         )}
 
@@ -526,24 +527,25 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
         onCheckout={(name) => void handleCheckout(name)}
         onDelete={(name) => setDeleteTarget({ kind: 'branch', name })}
         onCreate={(name) => void handleCreateBranch(name)}
+        t={t}
       />
 
       <Modal
         open={remoteModalOpen}
         onClose={() => setRemoteModalOpen(false)}
-        title="创建远程仓库"
-        closeLabel="关闭"
+        title={t('createRemote')}
+        closeLabel={t('close')}
         footer={
           <>
-            <Button variant="ghost" size="md" onClick={() => setRemoteModalOpen(false)}>取消</Button>
-            <Button variant="primary" size="md" disabled={busy !== null || remoteUrl.trim().length === 0} onClick={() => void handleAddRemote()}>添加</Button>
+            <Button variant="ghost" size="md" onClick={() => setRemoteModalOpen(false)}>{t('cancel')}</Button>
+            <Button variant="primary" size="md" disabled={busy !== null || remoteUrl.trim().length === 0} onClick={() => void handleAddRemote()}>{t('add')}</Button>
           </>
         }
       >
         <input
           className="dshgit-modal-input"
           value={remoteUrl}
-          placeholder="远程仓库 URL，例如 https://github.com/user/repo.git"
+          placeholder={t('remoteUrlPlaceholder')}
           spellCheck={false}
           autoFocus
           onChange={(event) => setRemoteUrl(event.target.value)}
@@ -556,17 +558,21 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
       <Modal
         open={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
-        title={deleteTarget?.kind === 'branch' ? '删除分支' : '删除远程仓库'}
-        closeLabel="关闭"
+        title={deleteTarget?.kind === 'branch' ? t('deleteBranch') : t('deleteRemoteRepo')}
+        closeLabel={t('close')}
         footer={
           <>
-            <Button variant="ghost" size="md" onClick={() => setDeleteTarget(null)}>取消</Button>
-            <Button variant="primary" size="md" onClick={() => void confirmDelete()}>删除</Button>
+            <Button variant="ghost" size="md" onClick={() => setDeleteTarget(null)}>{t('cancel')}</Button>
+            <Button variant="primary" size="md" onClick={() => void confirmDelete()}>{t('delete')}</Button>
           </>
         }
       >
         <p className="dshgit-modal-text">
-          确定要删除{deleteTarget?.kind === 'branch' ? '分支' : '远程仓库'}「{deleteTarget?.name}」吗？此操作不可撤销。
+          {deleteTarget !== null
+            ? deleteTarget.kind === 'branch'
+              ? t('deleteBranchConfirm', { name: deleteTarget.name })
+              : t('deleteRemoteConfirm', { name: deleteTarget.name })
+            : null}
         </p>
       </Modal>
     </div>
