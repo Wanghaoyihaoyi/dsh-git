@@ -1,6 +1,6 @@
 # @mojiexuan/dsh-git
 
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web 界面的 Git 源代码管理侧栏插件（bundle）。它把源代码管理面板停靠在右侧详情栏（窄屏时回退为悬浮层），在浏览器里提供仓库初始化、逐文件暂存、提交/推送/发布/拉取、分支与远程管理、AI 提交信息、以及提交历史图。
+一个为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 打造的、类似 VS Code 的 **Git 源代码管理面板**插件（bundle）。在浏览器里提供仓库初始化、逐文件暂存、提交/推送/发布/拉取、分支与远程管理、AI 提交信息、以及提交历史图。
 
 > English docs: [README.md](../README.md)
 

@@ -1,6 +1,6 @@
 # @mojiexuan/dsh-git
 
-A Git source-control sidebar bundle for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web UI. It docks a source-control panel into the right details column (with a floating-overlay fallback on narrow screens) and brings repo init, per-file staging, commit/push/publish/pull, branch & remote management, AI commit messages, and a commit-history graph into the browser.
+A VS Code–like **Git Source Control panel** for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web UI — repo init, per-file staging, commit/push/publish/pull, branch & remote management, AI commit messages, and a commit-history graph, all in the browser.
 
 > 中文文档：[docs/README.zh.md](docs/README.zh.md)
 
