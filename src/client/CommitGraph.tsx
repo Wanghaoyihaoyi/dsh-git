@@ -16,6 +16,18 @@ const OVERSCAN = 8
 const FILE_ROW_H = 22
 const FILES_PAD = 8
 const NOTE_H = 28
+/** Poll interval for auto-refreshing the history graph while it is expanded. */
+const HISTORY_POLL_MS = 4000
+
+/** Cheap stable fingerprint of a log snapshot (count + commit hashes + refs). */
+function logFingerprint(rows: GitLogRow[]): string {
+  let out = String(rows.length)
+  for (const row of rows) {
+    const commit = row.commit
+    out += commit === undefined ? '|-' : `|${commit.hash}:${commit.refs.join(';')}`
+  }
+  return out
+}
 
 type DetailState =
   | { status: 'loading' }
@@ -139,6 +151,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
   const hoverTimer = useRef<number | undefined>(undefined)
   const inFlight = useRef(new Set<string>())
   const copiedTimer = useRef<number | undefined>(undefined)
+  const lastFingerprintRef = useRef<string | null>(null)
 
   // The workspace changed: drop the stale graph and collapse.
   useEffect(() => {
@@ -146,6 +159,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     setOpen(false)
     setExpanded(new Set())
     setDetails(new Map())
+    lastFingerprintRef.current = null
   }, [cwd])
 
   const load = useCallback(async (force = false) => {
@@ -155,12 +169,40 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     try {
       const { rows: data } = await git.log(cwd)
       setRows(data)
+      lastFingerprintRef.current = logFingerprint(data)
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
     }
   }, [git, cwd, loading, rows, onError])
+
+  // Auto-refresh the graph while it is expanded (new commits/refs made outside
+  // the panel show up). A cheap fingerprint comparison keeps a no-op poll from
+  // re-rendering; skip while a manual load is in flight.
+  useEffect(() => {
+    if (!open || loading) return
+    let disposed = false
+    const timer = window.setInterval(() => {
+      if (disposed) return
+      void git
+        .log(cwd)
+        .then(({ rows: data }) => {
+          if (disposed) return
+          const fingerprint = logFingerprint(data)
+          if (lastFingerprintRef.current === fingerprint) return
+          lastFingerprintRef.current = fingerprint
+          setRows(data)
+        })
+        .catch(() => {
+          // Transient poll failures are ignored; the next tick retries.
+        })
+    }, HISTORY_POLL_MS)
+    return () => {
+      disposed = true
+      window.clearInterval(timer)
+    }
+  }, [open, loading, cwd, git])
 
   const ensureDetail = useCallback(async (hash: string) => {
     if (details.get(hash) !== undefined || inFlight.current.has(hash)) return
