@@ -1,6 +1,7 @@
 {
-  "name": "@majiexuan/dsh-git",
+  "name": "@mojiexuan/dsh-git",
   "version": "0.1.0",
+  "author": "陈佳宝 <mail@chenjiabao.com>",
   "description": "Git source-control sidebar for the DeepSeek Harness web UI: repo init, staging, commit/push/pull, branch & remote management, AI-generated Conventional Commits messages, and a commit-history graph.",
   "type": "module",
   "main": "lib/index.js",
@@ -22,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/majiexuan/dsh-git"
+    "url": "https://github.com/mojiexuan/dsh-git"
   },
   "keywords": [
     "dsh",

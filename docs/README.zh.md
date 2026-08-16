@@ -1,4 +1,4 @@
-# @majiexuan/dsh-git
+# @mojiexuan/dsh-git
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web 界面的 Git 源代码管理侧栏插件（bundle）。它把源代码管理面板停靠在右侧详情栏（窄屏时回退为悬浮层），在浏览器里提供仓库初始化、逐文件暂存、提交/推送/发布/拉取、分支与远程管理、AI 提交信息、以及提交历史图。
 
@@ -28,7 +28,7 @@
 ## 安装
 
 ```sh
-dsh plugin --profile web add @majiexuan/dsh-git
+dsh plugin --profile web add @mojiexuan/dsh-git
 ```
 
 然后启动 `dsh web`。
@@ -37,10 +37,10 @@ dsh plugin --profile web add @majiexuan/dsh-git
 
 ```sh
 # 卸载（正式发布版与本地 link 版命令相同）
-dsh plugin --profile web remove @majiexuan/dsh-git
+dsh plugin --profile web remove @mojiexuan/dsh-git
 
 # 更新到最新发布版
-dsh plugin --profile web update @majiexuan/dsh-git
+dsh plugin --profile web update @mojiexuan/dsh-git
 ```
 
 本地 link 开发（`dsh plugin --profile web add .`）无需单独的更新命令：改完代码 `npm run build` 后，完全重启 `dsh web`（host bundle）并刷新浏览器（client bundle）即可。

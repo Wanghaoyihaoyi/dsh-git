@@ -1,4 +1,4 @@
-// @majiexuan/dsh-git — client half.
+// @mojiexuan/dsh-git — client half.
 //
 // Registers two entries:
 //   - the git panel into the layout's right `details` column (docked, squeezes
@@ -24,13 +24,13 @@ export const name = 'dsh-git-client'
 // import loads `ctx.connection`.
 export const inject = ['slots', 'layout', 'connection', 'locale']
 
-const STYLE_TAG_ID = '@majiexuan/dsh-git/panel.css'
+const STYLE_TAG_ID = '@mojiexuan/dsh-git/panel.css'
 
 function injectStyles() {
   if (typeof document === 'undefined') return
   if (document.querySelector(`style[data-plugin-css=${JSON.stringify(STYLE_TAG_ID)}]`)) return
   const tag = document.createElement('style')
-  tag.dataset.plugin = '@majiexuan/dsh-git'
+  tag.dataset.plugin = '@mojiexuan/dsh-git'
   tag.dataset.pluginCss = STYLE_TAG_ID
   tag.textContent = PANEL_CSS
   document.head.appendChild(tag)
@@ -44,7 +44,7 @@ export function apply(ctx: ClientContext) {
   // the shipped api-gateway client resolves it the same way.
   const connection = ctx.get('connection') as ConnectionHandle | undefined
   if (connection === undefined) {
-    throw new Error('@majiexuan/dsh-git: client connection service is unavailable')
+    throw new Error('@mojiexuan/dsh-git: client connection service is unavailable')
   }
   const git = createGitApi((endpoint, payload, signal) =>
     connection.rpc.call('/api', endpoint, payload, signal),
@@ -73,7 +73,7 @@ export function apply(ctx: ClientContext) {
   // Floating panel (narrow viewport): the details column auto-closes below
   // `sidebar + 940px`, so fall back to the frame-wide overlay surface.
   ctx.slots.register(
-    { name: 'shell.overlay', id: '@majiexuan/dsh-git/panel', locale: 'git', inject: () => ({ git, closeGit, openGit, mode: 'floating' as const }) },
+    { name: 'shell.overlay', id: '@mojiexuan/dsh-git/panel', locale: 'git', inject: () => ({ git, closeGit, openGit, mode: 'floating' as const }) },
     GitPanel,
   )
 
@@ -83,7 +83,7 @@ export function apply(ctx: ClientContext) {
     ctx.slots.register(
       {
         name: 'sidebar.footer.action',
-        id: '@majiexuan/dsh-git/toggle',
+        id: '@mojiexuan/dsh-git/toggle',
         locale: 'git',
         inject: () => ({ toggleGit }),
       },

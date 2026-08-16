@@ -1,4 +1,4 @@
-# @majiexuan/dsh-git
+# @mojiexuan/dsh-git
 
 A Git source-control sidebar bundle for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web UI. It docks a source-control panel into the right details column (with a floating-overlay fallback on narrow screens) and brings repo init, per-file staging, commit/push/publish/pull, branch & remote management, AI commit messages, and a commit-history graph into the browser.
 
@@ -28,7 +28,7 @@ A Git source-control sidebar bundle for the [DeepSeek Harness](https://github.co
 ## Install
 
 ```sh
-dsh plugin --profile web add @majiexuan/dsh-git
+dsh plugin --profile web add @mojiexuan/dsh-git
 ```
 
 Then start `dsh web`.
@@ -37,10 +37,10 @@ Then start `dsh web`.
 
 ```sh
 # Uninstall (same command for the published package and a local link)
-dsh plugin --profile web remove @majiexuan/dsh-git
+dsh plugin --profile web remove @mojiexuan/dsh-git
 
 # Update to the latest published version
-dsh plugin --profile web update @majiexuan/dsh-git
+dsh plugin --profile web update @mojiexuan/dsh-git
 ```
 
 For a linked local checkout (`dsh plugin --profile web add .`), there is no

@@ -1,4 +1,4 @@
-// Build script for @majiexuan/dsh-git.
+// Build script for @mojiexuan/dsh-git.
 //
 // Produces the two artifacts a DSH web bundle ships:
 //   - lib/index.js   (host half, ESM, Node)     — the plugin row's entry.
@@ -13,7 +13,7 @@ import { build } from 'esbuild'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 
-const PACKAGE_ID = '@majiexuan/dsh-git'
+const PACKAGE_ID = '@mojiexuan/dsh-git'
 const shared = {
   bundle: true,
   sourcemap: false,

@@ -136,7 +136,7 @@ export async function generateCommitMessage(
   const messages = [
     createUserMessage({
       content: [{ type: 'text', text: summary }],
-      source: { kind: 'plugin', plugin: '@majiexuan/dsh-git' },
+      source: { kind: 'plugin', plugin: '@mojiexuan/dsh-git' },
     }),
   ]
 
