@@ -8,4 +8,6 @@ lib/
 fetched/
 fetch-all.mjs
 fetch-community.mjs
+# local release notes — kept around but never committed
+release-notes/
 
