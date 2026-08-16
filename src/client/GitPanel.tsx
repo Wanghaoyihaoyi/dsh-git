@@ -25,6 +25,9 @@ function basename(path: string): string {
   return path.split('/').pop() ?? path
 }
 
+/** Poll interval for detecting external repo changes (edits/commits/pushes elsewhere). */
+const STATUS_POLL_MS = 2500
+
 export interface GitPanelProps extends GlobalStandardProps {
   git: GitApi
   closeGit: () => void
@@ -90,6 +93,35 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   useEffect(() => {
     if (visible) void refresh()
   }, [visible, refresh])
+
+  // Auto-refresh: poll `git status` while visible so edits/commits/pushes made
+  // OUTSIDE the panel (terminal, VSCode, …) show up. Compare the serialized
+  // status so a no-op poll never re-renders; skip while an operation is running.
+  useEffect(() => {
+    if (!visible || !cwd) return
+    let disposed = false
+    let inFlight = false
+    const timer = window.setInterval(() => {
+      if (disposed || inFlight || busy !== null) return
+      inFlight = true
+      void git
+        .status(cwd)
+        .then((next) => {
+          if (disposed) return
+          setStatus((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
+        })
+        .catch(() => {
+          // Transient poll failures are ignored; the next tick retries.
+        })
+        .finally(() => {
+          inFlight = false
+        })
+    }, STATUS_POLL_MS)
+    return () => {
+      disposed = true
+      window.clearInterval(timer)
+    }
+  }, [visible, cwd, busy, git])
 
   const run = useCallback(
     async (label: string, action: () => Promise<GitStatus>, onSuccess?: () => void) => {
