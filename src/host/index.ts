@@ -13,11 +13,15 @@ import {
   GIT_RPC,
   EMPTY_STATUS,
   type GitBranch,
+  type GitCommitDetail,
   type GitEndpoint,
+  type GitFileChange,
+  type GitGraphCell,
+  type GitLogRow,
   type GitRemote,
   type GitStatus,
 } from '../shared/rpc.js'
-import { assertSafe, git, gitOrThrow, literalPathspec, SAFE_BRANCH, SAFE_REMOTE, SAFE_URL, stdoutText } from './git.js'
+import { assertSafe, git, gitOrThrow, literalPathspec, SAFE_BRANCH, SAFE_HASH, SAFE_REMOTE, SAFE_URL, stdoutText } from './git.js'
 import { generateCommitMessage } from './commit-message.js'
 
 export const name = 'dsh-git'
@@ -26,6 +30,8 @@ export const inject = ['shell', 'llm', 'connection', 'agentDefaultModel']
 export const Config = z.object({
   /** Hard cap on the diff text handed to the model before a commit-message ask. */
   maxDiffChars: z.number().default(4000),
+  /** Max commit rows to load for the history graph (virtual-scrolled client-side). */
+  maxLogEntries: z.number().default(2000),
   /** Optional pin; when omitted the deployment's default model is used. */
   provider: z.string(),
   model: z.string(),
@@ -35,6 +41,7 @@ export const Config = z.object({
 
 interface ResolvedConfig {
   maxDiffChars?: number
+  maxLogEntries?: number
   provider?: string
   model?: string
   reasoningEffort?: string
@@ -121,6 +128,12 @@ async function dispatch(
       return gitPublish(ctx, cwd, signal)
     case GIT_RPC.pull:
       return gitPull(ctx, cwd, signal)
+    case GIT_RPC.log:
+      return gitLog(ctx, cwd, signal, config)
+    case GIT_RPC.commitDetail: {
+      const hash = readHash(payload)
+      return gitCommitDetail(ctx, cwd, hash, signal)
+    }
     case GIT_RPC.remotes:
       return gitRemotes(ctx, cwd, signal)
     case GIT_RPC.remoteAdd: {
@@ -244,6 +257,14 @@ function readUrl(payload: unknown): string {
   return url
 }
 
+function readHash(payload: unknown): string {
+  const hash = (payload as { hash?: unknown } | null | undefined)?.hash
+  if (typeof hash !== 'string' || hash.trim().length === 0) {
+    throw new Error('hash is required')
+  }
+  return hash
+}
+
 async function gitStatus(ctx: Context, cwd: string, signal: AbortSignal): Promise<GitStatus> {
   // `--untracked-files=all` expands untracked directories into individual files,
   // so the file lists show files, not `dir/` directory rows.
@@ -360,6 +381,115 @@ async function gitPull(ctx: Context, cwd: string, signal: AbortSignal): Promise<
   // tracking refs that no longer exist upstream.
   await gitOrThrow(ctx.shell, ['fetch', '--all', '--prune'], { cwd, signal })
   return gitStatus(ctx, cwd, signal)
+}
+
+const LOG_FORMAT = '%H%x1f%P%x1f%an%x1f%aI%x1f%D%x1f%s'
+
+async function gitLog(ctx: Context, cwd: string, signal: AbortSignal, config: ResolvedConfig): Promise<{ rows: GitLogRow[] }> {
+  const limit = Math.max(1, Math.min(config.maxLogEntries ?? 2000, 20000))
+  const result = await git(ctx.shell, [
+    'log',
+    '--graph',
+    '--all',
+    '--date-order',
+    '--color=always',
+    '--max-count',
+    String(limit),
+    // `%x1e` opens each record so the graph prefix can be split off reliably.
+    `--format=%x1e${LOG_FORMAT}`,
+  ], { cwd, signal })
+  if (result.exitCode !== 0) return { rows: [] }
+  return { rows: parseLog(stdoutText(result)) }
+}
+
+/** ANSI reset codes → default (no) color. */
+const ANSI_RESET = new Set(['', '0', '00'])
+/** Map git's graph ANSI palette to theme-neutral CSS colors. */
+const ANSI_COLORS: Record<string, string> = {
+  '31': '#e0554f', '32': '#4caf50', '33': '#e6a23c', '34': '#4a86c8',
+  '35': '#9c27b0', '36': '#00b4d8', '37': '#9ca3af',
+  '1;31': '#ff7a72', '1;32': '#7bd88f', '1;33': '#f5c26b', '1;34': '#6ea8ff',
+  '1;35': '#c58bff', '1;36': '#5fd8f0', '1;37': '#d1d5db',
+}
+
+/** Parse a `--color=always` graph prefix into colored cells (spaces dropped). */
+function parseGraph(graphText: string): GitGraphCell[] {
+  const cells: GitGraphCell[] = []
+  let col = 0
+  let color: string | null = null
+  let i = 0
+  while (i < graphText.length) {
+    const ch = graphText[i]
+    if (ch === '\x1b') {
+      const end = graphText.indexOf('m', i)
+      if (end < 0) break
+      const code = graphText.slice(i + 2, end)
+      color = ANSI_RESET.has(code) ? null : ANSI_COLORS[code] ?? color
+      i = end + 1
+      continue
+    }
+    if (ch !== ' ') cells.push({ col, ch, color })
+    col++
+    i++
+  }
+  return cells
+}
+
+/** Split `git log --graph --format=…` output into graph rows + commit records. */
+function parseLog(output: string): GitLogRow[] {
+  const rows: GitLogRow[] = []
+  for (const rawLine of output.split('\n')) {
+    const line = rawLine.endsWith('\r') ? rawLine.slice(0, -1) : rawLine
+    if (line.length === 0) continue
+    const rs = line.indexOf('\x1e')
+    if (rs < 0) {
+      // Graph-only row (e.g. "|\\", "|/") with no commit.
+      rows.push({ graph: parseGraph(line) })
+      continue
+    }
+    const graph = parseGraph(line.slice(0, rs))
+    const fields = line.slice(rs + 1).split('\x1f')
+    const hash = fields[0] ?? ''
+    if (hash === '') {
+      rows.push({ graph })
+      continue
+    }
+    rows.push({
+      graph,
+      commit: {
+        hash,
+        shortHash: hash.slice(0, 7),
+        parents: (fields[1] ?? '').split(' ').filter(Boolean).map((p) => p.slice(0, 7)),
+        author: fields[2] ?? '',
+        date: fields[3] ?? '',
+        refs: (fields[4] ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+        subject: fields[5] ?? '',
+      },
+    })
+  }
+  return rows
+}
+
+async function gitCommitDetail(ctx: Context, cwd: string, hash: string, signal: AbortSignal): Promise<GitCommitDetail> {
+  const safeHash = assertSafe(hash, SAFE_HASH, 'commit hash')
+  const show = await gitOrThrow(ctx.shell, ['show', '-s', '--format=%H%x1f%an%x1f%aI%x1f%B', safeHash], { cwd, signal })
+  const text = stdoutText(show)
+  const parts = text.split('\x1f')
+  const files: GitFileChange[] = []
+  const diff = await git(ctx.shell, ['diff-tree', '--no-commit-id', '--name-status', '-r', '--root', safeHash], { cwd, signal })
+  if (diff.exitCode === 0) {
+    for (const line of stdoutText(diff).split('\n')) {
+      const match = /^([A-Z])\t(.+)$/.exec(line.trimEnd())
+      if (match) files.push({ status: match[1], path: match[2] })
+    }
+  }
+  return {
+    hash: parts[0] ?? safeHash,
+    author: parts[1] ?? '',
+    date: parts[2] ?? '',
+    message: parts.slice(3).join('\x1f').replace(/\n+$/, ''),
+    files,
+  }
 }
 
 async function gitRemotes(ctx: Context, cwd: string, signal: AbortSignal): Promise<GitRemote[]> {

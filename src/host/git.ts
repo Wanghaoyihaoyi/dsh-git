@@ -78,6 +78,7 @@ export function literalPathspec(path: string): string {
 export const SAFE_BRANCH = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/
 export const SAFE_REMOTE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 export const SAFE_URL = /^[A-Za-z0-9][A-Za-z0-9:/.@~_%-]*$/
+export const SAFE_HASH = /^[0-9a-fA-F]{4,64}$/
 
 /** Trim and validate a user-supplied value against a safe-character class. */
 export function assertSafe(value: string, pattern: RegExp, label: string): string {

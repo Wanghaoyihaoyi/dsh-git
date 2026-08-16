@@ -14,6 +14,8 @@ export const GIT_RPC = {
   push: 'git/push',
   publish: 'git/publish',
   pull: 'git/pull',
+  log: 'git/log',
+  commitDetail: 'git/commitDetail',
   generateMessageStart: 'git/generateMessageStart',
   generateMessagePoll: 'git/generateMessagePoll',
   remotes: 'git/remotes',
@@ -47,6 +49,49 @@ export interface GitRemote {
 export interface GitBranch {
   name: string
   current: boolean
+}
+
+/** A commit entry in the history graph. */
+export interface GitLogCommit {
+  hash: string
+  shortHash: string
+  parents: string[]
+  author: string
+  /** Strict ISO-8601 author date (`%aI`). */
+  date: string
+  /** Raw `%D` decorations (e.g. "HEAD -> main", "feat", "tag: v1.0"). */
+  refs: string[]
+  subject: string
+}
+
+/** One colored cell of a graph line (spaces omitted; `col` is the character column). */
+export interface GitGraphCell {
+  col: number
+  /** One of `*` (commit), `|`, `\`, `/`, `_`, `-`, `.` */
+  ch: string
+  /** CSS color for the line, or null for the commit marker (`*`). */
+  color: string | null
+}
+
+/** One row of the history view: graph cells + the commit on commit rows. */
+export interface GitLogRow {
+  graph: GitGraphCell[]
+  /** Undefined on graph-only rows (e.g. "|\\", "|/" continuation lines). */
+  commit?: GitLogCommit
+}
+
+export interface GitFileChange {
+  /** `git diff-tree --name-status` letter: A/M/D/R/C/T/… */
+  status: string
+  path: string
+}
+
+export interface GitCommitDetail {
+  hash: string
+  author: string
+  date: string
+  message: string
+  files: GitFileChange[]
 }
 
 /** Canonical status payload returned by every git/* endpoint that mutates. */

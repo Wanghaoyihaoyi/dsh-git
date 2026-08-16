@@ -11,6 +11,7 @@ import type { GitApi } from './rpc.js'
 import { panelStore } from './panelStore.js'
 import { useIsNarrow } from './useIsNarrow.js'
 import { BranchMenu } from './BranchMenu.js'
+import { CommitGraph } from './CommitGraph.js'
 import { fileIcon } from './fileIcons.js'
 import {
   GitIcon,
@@ -478,6 +479,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               ) : null}
             </div>
             </div>
+            <CommitGraph git={git} cwd={cwd} onError={setError} />
           </div>
         )}
 

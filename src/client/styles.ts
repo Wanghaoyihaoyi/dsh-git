@@ -84,4 +84,46 @@ export const PANEL_CSS = `
 .dshgit-bmenu-empty{color:var(--dsw-alias-label-secondary);padding:12px;text-align:center}
 .dshgit-modal-input{width:100%;height:36px;box-sizing:border-box;margin:0;padding:0 10px;border:1px solid var(--dsw-alias-border-l3);border-radius:8px;outline:none;background:transparent;color:var(--dsw-alias-label-primary);font-size:14px;font-family:inherit}
 .dshgit-modal-text{margin:0;color:var(--dsw-alias-label-primary);font-size:14px;line-height:22px}
+.dshgit-history{flex:0 0 auto;min-height:0;display:flex;flex-direction:column;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;overflow:hidden}
+.dshgit-history-open{flex:1 1 0}
+.dshgit-history-head{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 10px;cursor:pointer;user-select:none;color:var(--dsw-alias-label-primary)}
+.dshgit-history-head:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.dshgit-history-left{display:flex;align-items:center;gap:6px;min-width:0}
+.dshgit-history-caret{flex:none;font-size:10px}
+.dshgit-history-title{font-size:13px}
+.dshgit-log-viewport{flex:1;min-height:0;overflow-y:auto;border-top:1px solid var(--dsw-alias-border-l2)}
+.dshgit-log-viewport::-webkit-scrollbar{width:8px}
+.dshgit-log-viewport::-webkit-scrollbar-thumb{background:var(--dsw-alias-scrollbar-bg-l2);border-radius:4px}
+.dshgit-log-viewport::-webkit-scrollbar-thumb:hover{background:var(--dsw-alias-scrollbar-hover-l2)}
+.dshgit-log-empty{display:flex;align-items:center;justify-content:center;padding:16px;color:var(--dsw-alias-label-secondary);font-size:13px}
+.dshgit-log-graph{flex:none;display:block;overflow:visible}
+.dshgit-log-dot{fill:var(--dsw-alias-state-business-primary)}
+.dshgit-log-commit{min-width:0;display:flex;align-items:center;gap:4px;border:none;background:transparent;cursor:pointer;padding:0 10px 0 0;font-family:inherit;text-align:left;box-sizing:border-box}
+.dshgit-log-commit:hover .dshgit-log-subject{color:var(--dsw-alias-state-business-primary)}
+.dshgit-log-ref{flex:none;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px;border-radius:4px;font-size:11px;line-height:16px;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
+.dshgit-log-ref-current{color:var(--dsw-alias-state-business-primary);font-weight:500}
+.dshgit-log-ref-tag{color:var(--dsw-alias-label-primary)}
+.dshgit-log-subject{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-primary);font-size:13px}
+.dshgit-log-files{padding:4px 0}
+.dshgit-log-file{display:flex;align-items:center;gap:8px;height:22px;box-sizing:border-box;padding:0 10px 0 0}
+.dshgit-log-files-note{display:flex;align-items:center;height:28px;box-sizing:border-box;padding:0 10px 0 0;color:var(--dsw-alias-label-secondary);font-size:12px}
+.dshgit-log-files-error{color:var(--dsw-alias-state-error-primary)}
+.dshgit-file-status{flex:none;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;font-size:10px;font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.dshgit-file-status-A{color:#1f9d55;background:rgba(31,157,85,.15)}
+.dshgit-file-status-M{color:#c9a227;background:rgba(201,162,39,.15)}
+.dshgit-file-status-D{color:#e0554f;background:rgba(224,85,79,.15)}
+.dshgit-file-status-R{color:#4a86c8;background:rgba(74,134,200,.15)}
+.dshgit-file-status-C{color:#4a86c8;background:rgba(74,134,200,.15)}
+.dshgit-file-status-T{color:#8a63d2;background:rgba(138,99,210,.15)}
+.dshgit-hover{position:fixed;z-index:1002;max-width:360px;max-height:60vh;overflow-y:auto;box-sizing:border-box;background:var(--dsw-specific-menu,var(--dsw-alias-bg-base));color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l3);border-radius:10px;box-shadow:var(--dsw-shadow-lv3,0 8px 24px rgba(0,0,0,.18));padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.dshgit-hover-message{white-space:pre-wrap;word-break:break-word;line-height:20px}
+.dshgit-hover-meta{display:flex;flex-direction:column;gap:4px;color:var(--dsw-alias-label-primary)}
+.dshgit-hover-label{display:inline-block;width:40px;color:var(--dsw-alias-label-secondary)}
+.dshgit-hover-hash{display:flex;align-items:center;gap:8px}
+.dshgit-hover-hash-value{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--dsw-alias-label-secondary)}
+.dshgit-hover-copy{flex:none;display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;padding:2px;border-radius:4px}
+.dshgit-hover-copy:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
+.dshgit-hover-copied{font-size:12px;color:var(--dsw-alias-state-business-primary)}
+.dshgit-hover-note{color:var(--dsw-alias-label-secondary)}
+.dshgit-hover-error{color:var(--dsw-alias-state-error-primary)}
 `
