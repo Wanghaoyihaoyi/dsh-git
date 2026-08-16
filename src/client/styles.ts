@@ -41,7 +41,7 @@ export const PANEL_CSS = `
 .dshgit-sparkle{flex:none;width:36px;height:36px;box-sizing:border-box;margin:0;padding:0;background:transparent;border:none;border-left:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;border-radius:0}
 .dshgit-sparkle:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .dshgit-sparkle:disabled{opacity:.4;cursor:default}
-.dshgit-action{width:100%}
+.dshgit-action{width:100%;border-radius:8px !important}
 .dshgit-group{flex:none;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;overflow:hidden}
 .dshgit-group-head{display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;user-select:none;color:var(--dsw-alias-label-primary)}
 .dshgit-group-head:hover{background:var(--dsw-alias-interactive-bg-hover)}
