@@ -13,7 +13,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { UIEvent } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { GitApi } from './rpc.js'
-import type { GitCommitDetail } from '../shared/rpc.js'
+import type { GitCommitDetail, GitLogCommit } from '../shared/rpc.js'
 import { advance, createCursor, type GraphCursor, type GraphRow } from './graph.js'
 import { CopyIcon, RefreshIcon } from './icons.js'
 
@@ -169,6 +169,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
   const [copied, setCopied] = useState(false)
 
   const cursorRef = useRef<GraphCursor>(createCursor())
+  const commitsRef = useRef<GitLogCommit[]>([])
   const offsetRef = useRef(0)
   const hasMoreRef = useRef(false)
   const loadingRef = useRef(false)
@@ -181,6 +182,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
 
   const reset = useCallback(() => {
     cursorRef.current = createCursor()
+    commitsRef.current = []
     offsetRef.current = 0
     hasMoreRef.current = false
     firstCommitHashRef.current = undefined
@@ -207,6 +209,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     try {
       const page = await git.logPage(cwd, offsetRef.current, PAGE_SIZE)
       const newRows = advance(cursorRef.current, page.commits)
+      commitsRef.current = first ? page.commits : [...commitsRef.current, ...page.commits]
       setRows((prev) => (first ? newRows : [...prev, ...newRows]))
       setMaxCol(cursorRef.current.maxCol)
       offsetRef.current += page.commits.length
@@ -221,23 +224,63 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     }
   }, [git, cwd, onError])
 
-  // Auto-refresh while expanded: if the newest commit changed outside the panel,
-  // reload from scratch so new commits/refs show up.
+  // Auto-refresh while expanded: poll the newest commit; when it changes, fetch
+  // only the new commits, prepend them, and recompute in one atomic swap (no
+  // reset-to-empty), so the list updates without flicker and keeps its position.
   useEffect(() => {
-    if (!open || loading) return
+    if (!open || loading || loadingMore) return
     let disposed = false
+    let refreshing = false
     const timer = window.setInterval(() => {
-      if (disposed) return
+      if (disposed || refreshing) return
       void git
         .logPage(cwd, 0, 1)
         .then(({ commits }) => {
           if (disposed) return
           const latest = commits[0]?.hash
           const current = firstCommitHashRef.current
-          if (latest !== undefined && current !== undefined && latest !== current) {
-            reset()
-            void loadNextPage()
-          }
+          if (latest === undefined || current === undefined || latest === current) return
+          refreshing = true
+          void (async () => {
+            try {
+              // Collect commits newer than the current newest (newest first).
+              const incoming: GitLogCommit[] = []
+              let offset = 0
+              while (incoming.length < 10000) {
+                const page = await git.logPage(cwd, offset, PAGE_SIZE)
+                let found = false
+                for (const c of page.commits) {
+                  if (c.hash === current) { found = true; break }
+                  incoming.push(c)
+                }
+                if (found) break
+                if (page.commits.length === 0 || !page.hasMore) break
+                offset += page.commits.length
+              }
+              if (disposed || incoming.length === 0) return
+              const merged = [...incoming, ...commitsRef.current]
+              // Height the prepended commits add, so the scroll position shifts
+              // by the same amount and the content under the cursor stays put.
+              const incomingRows = advance(createCursor(), incoming)
+              const incomingHeight = incomingRows.reduce((h, r) => h + rowHeight(r, expanded, details), 0)
+              const scrollBefore = viewportRef.current?.scrollTop ?? 0
+              const cursor = createCursor()
+              const newRows = advance(cursor, merged)
+              commitsRef.current = merged
+              cursorRef.current = cursor
+              setRows(newRows)
+              setMaxCol(cursor.maxCol)
+              firstCommitHashRef.current = incoming[0].hash
+              offsetRef.current = merged.length
+              requestAnimationFrame(() => {
+                if (!disposed && viewportRef.current) viewportRef.current.scrollTop = scrollBefore + incomingHeight
+              })
+            } catch {
+              // Transient refresh failures are ignored; the next tick retries.
+            } finally {
+              refreshing = false
+            }
+          })()
         })
         .catch(() => {
           // Transient poll failures are ignored; the next tick retries.
@@ -247,7 +290,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
       disposed = true
       window.clearInterval(timer)
     }
-  }, [open, loading, cwd, git, reset, loadNextPage])
+  }, [open, loading, loadingMore, cwd, git])
 
   const ensureDetail = useCallback(async (hash: string) => {
     if (details.get(hash) !== undefined || inFlight.current.has(hash)) return
@@ -346,6 +389,26 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     return { offsets, totalHeight: offsets[rows.length] }
   }, [rows, expanded, details])
 
+  // Stable keys: commit rows key by hash, bend rows by the preceding commit's
+  // hash + ordinal, so a refresh that prepends commits reuses existing DOM
+  // instead of remounting every row (avoids flicker).
+  const rowKeys = useMemo(() => {
+    const keys = new Array<string>(rows.length)
+    let prev = ''
+    let seq = 0
+    for (let i = 0; i < rows.length; i++) {
+      const commit = rows[i].commit
+      if (commit !== undefined) {
+        prev = commit.hash
+        seq = 0
+        keys[i] = `c:${commit.hash}`
+      } else {
+        keys[i] = `b:${prev}:${seq++}`
+      }
+    }
+    return keys
+  }, [rows])
+
   const { start, end } = useMemo(() => {
     if (rows.length === 0) return { start: 0, end: 0 }
     const start = Math.max(0, findStart(offsets, scrollTop) - OVERSCAN)
@@ -426,7 +489,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
                 const textLeft = (rowRight + 1) * laneW + GRAPH_RIGHT_GAP
                 const graphHeight = commit !== undefined ? fullHeight : EDGE_H
                 return (
-                  <div key={i} style={{ position: 'absolute', top: offsets[i], left: 0, right: 0, height: fullHeight }}>
+                  <div key={rowKeys[i]} style={{ position: 'absolute', top: offsets[i], left: 0, right: 0, height: fullHeight }}>
                     <GraphSvg cells={row.cells} width={graphWidth} height={graphHeight} laneW={laneW} dotY={commit !== undefined ? ROW_H / 2 : undefined} />
                     {commit !== undefined ? (
                       <button
