@@ -4,3 +4,8 @@ lib/
 .pnpm-store/
 .dsh-verify/
 *.log
+# research/fetch cache — local-only reference, never committed
+fetched/
+fetch-all.mjs
+fetch-community.mjs
+
