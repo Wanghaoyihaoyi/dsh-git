@@ -224,9 +224,10 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     }
   }, [git, cwd, onError])
 
-  // Auto-refresh while expanded: poll the newest commit; when it changes, fetch
-  // only the new commits, prepend them, and recompute in one atomic swap (no
-  // reset-to-empty), so the list updates without flicker and keeps its position.
+  // Auto-refresh while expanded: poll the newest commit's hash AND refs. New
+  // commits get prepended; ref changes (e.g. origin/main advancing after a push)
+  // update the existing commits' labels. Recomputed in one atomic swap, so the
+  // list never flickers and keeps its scroll position.
   useEffect(() => {
     if (!open || loading || loadingMore) return
     let disposed = false
@@ -237,32 +238,31 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
         .logPage(cwd, 0, 1)
         .then(({ commits }) => {
           if (disposed) return
-          const latest = commits[0]?.hash
-          const current = firstCommitHashRef.current
-          if (latest === undefined || current === undefined || latest === current) return
+          const latest = commits[0]
+          const current = commitsRef.current[0]
+          if (latest === undefined || current === undefined) return
+          const hashChanged = latest.hash !== current.hash
+          const refsChanged = latest.refs.join(',') !== current.refs.join(',')
+          if (!hashChanged && !refsChanged) return
           refreshing = true
           void (async () => {
             try {
-              // Collect commits newer than the current newest (newest first).
+              // One page covers both the new commits and the latest ref labels.
+              const page = await git.logPage(cwd, 0, PAGE_SIZE)
               const incoming: GitLogCommit[] = []
-              let offset = 0
-              while (incoming.length < 10000) {
-                const page = await git.logPage(cwd, offset, PAGE_SIZE)
-                let found = false
-                for (const c of page.commits) {
-                  if (c.hash === current) { found = true; break }
-                  incoming.push(c)
-                }
-                if (found) break
-                if (page.commits.length === 0 || !page.hasMore) break
-                offset += page.commits.length
+              const refsByHash = new Map<string, string[]>()
+              for (const c of page.commits) {
+                refsByHash.set(c.hash, c.refs)
+                if (c.hash === current.hash) break
+                incoming.push(c)
               }
-              if (disposed || incoming.length === 0) return
-              const merged = [...incoming, ...commitsRef.current]
-              // Height the prepended commits add, so the scroll position shifts
-              // by the same amount and the content under the cursor stays put.
+              if (disposed) return
+              const merged = [
+                ...incoming,
+                ...commitsRef.current.map((c) => (refsByHash.has(c.hash) ? { ...c, refs: refsByHash.get(c.hash)! } : c)),
+              ]
               const incomingRows = advance(createCursor(), incoming)
-              const incomingHeight = incomingRows.reduce((h, r) => h + rowHeight(r, expanded, details), 0)
+              const incomingHeight = incomingRows.reduce((h, r) => h + (r.commit !== undefined ? ROW_H : EDGE_H), 0)
               const scrollBefore = viewportRef.current?.scrollTop ?? 0
               const cursor = createCursor()
               const newRows = advance(cursor, merged)
@@ -270,7 +270,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
               cursorRef.current = cursor
               setRows(newRows)
               setMaxCol(cursor.maxCol)
-              firstCommitHashRef.current = incoming[0].hash
+              firstCommitHashRef.current = merged[0].hash
               offsetRef.current = merged.length
               requestAnimationFrame(() => {
                 if (!disposed && viewportRef.current) viewportRef.current.scrollTop = scrollBefore + incomingHeight
