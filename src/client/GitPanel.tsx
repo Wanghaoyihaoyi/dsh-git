@@ -91,12 +91,13 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   }, [visible, refresh])
 
   const run = useCallback(
-    async (label: string, action: () => Promise<GitStatus>) => {
+    async (label: string, action: () => Promise<GitStatus>, onSuccess?: () => void) => {
       if (!cwd || busy) return
       setBusy(label)
       setError(null)
       try {
         setStatus(await action())
+        onSuccess?.()
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
       } finally {
@@ -378,7 +379,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                     }
                   })()
                 } else {
-                  void run('提交', () => git.commit(cwd, message))
+                  void run('提交', () => git.commit(cwd, message), () => setMessage(''))
                 }
               }}
             >
