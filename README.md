@@ -33,6 +33,20 @@ dsh plugin --profile web add @majiexuan/dsh-git
 
 Then start `dsh web`.
 
+## Uninstall / Update
+
+```sh
+# Uninstall (same command for the published package and a local link)
+dsh plugin --profile web remove @majiexuan/dsh-git
+
+# Update to the latest published version
+dsh plugin --profile web update @majiexuan/dsh-git
+```
+
+For a linked local checkout (`dsh plugin --profile web add .`), there is no
+separate update step — rebuild with `npm run build`, then fully restart
+`dsh web` (host bundle) and refresh the browser (client bundle).
+
 ## Build from source
 
 ```sh

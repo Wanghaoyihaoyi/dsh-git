@@ -33,6 +33,18 @@ dsh plugin --profile web add @majiexuan/dsh-git
 
 然后启动 `dsh web`。
 
+## 卸载 / 更新
+
+```sh
+# 卸载（正式发布版与本地 link 版命令相同）
+dsh plugin --profile web remove @majiexuan/dsh-git
+
+# 更新到最新发布版
+dsh plugin --profile web update @majiexuan/dsh-git
+```
+
+本地 link 开发（`dsh plugin --profile web add .`）无需单独的更新命令：改完代码 `npm run build` 后，完全重启 `dsh web`（host bundle）并刷新浏览器（client bundle）即可。
+
 ## 本地构建
 
 ```sh
