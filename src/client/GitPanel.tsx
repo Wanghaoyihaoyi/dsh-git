@@ -202,9 +202,18 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const remote = status?.remote
   const stagedCount = status?.staged.length ?? 0
   const hasChanges = stagedCount > 0 || (status?.unstaged.length ?? 0) > 0
-  const action: 'commit' | 'push' | 'idle' =
-    hasChanges ? 'commit' : (status?.ahead ?? 0) > 0 ? 'push' : 'idle'
-  const actionLabel = action === 'push' ? '推送' : '提交'
+  const hasUpstream = status?.upstream !== undefined
+  // Uncommitted changes always win: commit them first. Otherwise, with a remote
+  // configured, offer push (tracked branch, ahead > 0) or publish (untracked
+  // branch with local commits not on any remote).
+  const action: 'commit' | 'push' | 'publish' | 'idle' = hasChanges
+    ? 'commit'
+    : remote === undefined
+      ? 'idle'
+      : hasUpstream
+        ? (status?.ahead ?? 0) > 0 ? 'push' : 'idle'
+        : (status?.unpublished ?? false) ? 'publish' : 'idle'
+  const actionLabel = action === 'push' ? '推送' : action === 'publish' ? '发布分支' : '提交'
   const actionDisabled =
     busy !== null ||
     (action === 'commit' && message.trim().length === 0) ||
@@ -363,7 +372,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               variant="primary"
               size="md"
               disabled={actionDisabled}
-              icon={action === 'push' ? <PushIcon size={16} /> : undefined}
+              icon={action === 'push' || action === 'publish' ? <PushIcon size={16} /> : undefined}
               onClick={() => {
                 if (action === 'push') {
                   void (async () => {
@@ -372,6 +381,18 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                     try {
                       await git.push(cwd)
                       await refresh()
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : String(err))
+                    } finally {
+                      setBusy(null)
+                    }
+                  })()
+                } else if (action === 'publish') {
+                  void (async () => {
+                    setBusy('发布分支')
+                    setError(null)
+                    try {
+                      setStatus(await git.publish(cwd))
                     } catch (err) {
                       setError(err instanceof Error ? err.message : String(err))
                     } finally {

@@ -117,6 +117,8 @@ async function dispatch(
     }
     case GIT_RPC.push:
       return gitPush(ctx, cwd, signal)
+    case GIT_RPC.publish:
+      return gitPublish(ctx, cwd, signal)
     case GIT_RPC.pull:
       return gitPull(ctx, cwd, signal)
     case GIT_RPC.remotes:
@@ -250,6 +252,11 @@ async function gitStatus(ctx: Context, cwd: string, signal: AbortSignal): Promis
   const status = parseStatus(stdoutText(result))
   const remotes = await gitRemotes(ctx, cwd, signal)
   if (remotes.length > 0) status.remote = remotes[0]
+  // A branch with no upstream has no ahead/behind counters; detect "local
+  // commits not on any remote" directly so the client can offer "发布分支".
+  if (status.isRepo && status.hasCommits && status.upstream === undefined && status.remote !== undefined) {
+    status.unpublished = await hasUnpushedCommits(ctx, cwd, signal)
+  }
   return status
 }
 
@@ -327,6 +334,24 @@ async function gitCommit(ctx: Context, cwd: string, message: string, signal: Abo
 async function gitPush(ctx: Context, cwd: string, signal: AbortSignal): Promise<{ pushed: true }> {
   await gitOrThrow(ctx.shell, ['push'], { cwd, signal })
   return { pushed: true }
+}
+
+async function gitPublish(ctx: Context, cwd: string, signal: AbortSignal): Promise<GitStatus> {
+  const remotes = await gitRemotes(ctx, cwd, signal)
+  if (remotes.length === 0) throw new Error('没有配置远程仓库，无法发布分支')
+  const remote = assertSafe(remotes[0].name, SAFE_REMOTE, 'remote name')
+  // `push -u <remote> HEAD` publishes the current branch under its own name and
+  // records it as upstream; `HEAD` avoids ever interpolating a branch name.
+  await gitOrThrow(ctx.shell, ['push', '-u', remote, 'HEAD'], { cwd, signal })
+  return gitStatus(ctx, cwd, signal)
+}
+
+/** True when HEAD has commits not reachable from any remote-tracking ref. */
+async function hasUnpushedCommits(ctx: Context, cwd: string, signal: AbortSignal): Promise<boolean> {
+  const result = await git(ctx.shell, ['rev-list', '--count', 'HEAD', '--not', '--remotes'], { cwd, signal })
+  if (result.exitCode !== 0) return false
+  const count = Number(stdoutText(result).trim())
+  return Number.isFinite(count) && count > 0
 }
 
 async function gitPull(ctx: Context, cwd: string, signal: AbortSignal): Promise<GitStatus> {
@@ -464,5 +489,5 @@ function parseStatus(output: string): GitStatus {
     if (y !== ' ') unstaged.push({ path, index: x, worktree: y })
   }
 
-  return { isRepo: true, branch, upstream, ahead, behind, hasCommits, staged, unstaged }
+  return { isRepo: true, branch, upstream, ahead, behind, hasCommits, unpublished: false, staged, unstaged }
 }

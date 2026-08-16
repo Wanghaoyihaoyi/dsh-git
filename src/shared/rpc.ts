@@ -12,6 +12,7 @@ export const GIT_RPC = {
   unstageAll: 'git/unstageAll',
   commit: 'git/commit',
   push: 'git/push',
+  publish: 'git/publish',
   pull: 'git/pull',
   generateMessageStart: 'git/generateMessageStart',
   generateMessagePoll: 'git/generateMessagePoll',
@@ -57,6 +58,8 @@ export interface GitStatus {
   behind: number
   /** False only on a fresh `git init` with no commits yet. */
   hasCommits: boolean
+  /** True when the current branch (no upstream yet) has commits not on any remote. */
+  unpublished: boolean
   staged: GitFile[]
   unstaged: GitFile[]
   /** The default remote (name + url), when one is configured. */
@@ -68,6 +71,7 @@ export const EMPTY_STATUS: GitStatus = {
   ahead: 0,
   behind: 0,
   hasCommits: false,
+  unpublished: false,
   staged: [],
   unstaged: [],
 }

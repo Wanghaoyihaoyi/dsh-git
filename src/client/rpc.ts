@@ -21,6 +21,7 @@ export interface GitApi {
   unstageAll(cwd: string, signal?: AbortSignal): Promise<GitStatus>
   commit(cwd: string, message: string, signal?: AbortSignal): Promise<GitStatus>
   push(cwd: string, signal?: AbortSignal): Promise<{ pushed: true }>
+  publish(cwd: string, signal?: AbortSignal): Promise<GitStatus>
   pull(cwd: string, signal?: AbortSignal): Promise<GitStatus>
   generateMessageStart(cwd: string, signal?: AbortSignal): Promise<GenerateMessageStartResponse>
   generateMessagePoll(requestId: string, signal?: AbortSignal): Promise<GenerateMessagePollResponse>
@@ -55,6 +56,7 @@ export function createGitApi(call: Caller): GitApi {
     unstageAll: (cwd, signal) => unwrap(call, GIT_RPC.unstageAll, { cwd }, signal),
     commit: (cwd, message, signal) => unwrap(call, GIT_RPC.commit, { cwd, message }, signal),
     push: (cwd, signal) => unwrap(call, GIT_RPC.push, { cwd }, signal),
+    publish: (cwd, signal) => unwrap(call, GIT_RPC.publish, { cwd }, signal),
     pull: (cwd, signal) => unwrap(call, GIT_RPC.pull, { cwd }, signal),
     generateMessageStart: (cwd, signal) => unwrap(call, GIT_RPC.generateMessageStart, { cwd }, signal),
     generateMessagePoll: (requestId, signal) => unwrap(call, GIT_RPC.generateMessagePoll, { requestId }, signal),
