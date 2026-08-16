@@ -1,0 +1,4 @@
+# Put the README screenshots here, referenced as:
+#   docs/images/panel.png    — the source-control panel
+#   docs/images/history.png  — the commit-history graph
+# Keep them out of the npm package (they are not listed in package.json "files").

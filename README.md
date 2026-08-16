@@ -1,68 +1,95 @@
 # @majiexuan/dsh-git
 
-DeepSeek Harness 的 Git 源代码管理侧栏插件（bundle）。在 Web 界面右侧提供一个可开关的侧栏：检测/初始化 Git 仓库、逐文件暂存/取消暂存、提交、推送，以及用 AI 生成 Conventional Commits 中文提交信息。
+A Git source-control sidebar bundle for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web UI. It docks a source-control panel into the right details column (with a floating-overlay fallback on narrow screens) and brings repo init, per-file staging, commit/push/publish/pull, branch & remote management, AI commit messages, and a commit-history graph into the browser.
 
-## 特性
+> 中文文档：[docs/README.zh.md](docs/README.zh.md)
 
-- **可开关侧栏**：通过右上角浮动按钮打开/关闭（`shell.overlay` 插槽，不替换任何官方界面）。
-- **仓库检测与初始化**：非仓库只显示「初始化 Git 仓库」，一键 `git init -b main`。
-- **逐文件暂存**：暂存区 / 未暂存区两个可折叠列表，每行 `+`/`−`，另有「全部暂存」。
-- **提交/推送按 git 语义切换**：有已暂存改动显示「提交」；已提交未推送（`ahead > 0`）显示「推送」。
-- **AI 生成提交信息**：截断汇总 `git diff HEAD` + 未跟踪文件清单（长度可配），调用 LLM 生成一行中文 Conventional Commits 信息。
+## Features
 
-## 安装
+- **Toggleable panel** — an entry above Settings in the sidebar foot opens/closes the panel.
+- **Repo detect & init** — a non-repo workspace shows a one-click "Initialize Git repository" (`git init -b main`).
+- **Per-file staging** — collapsible "Staged changes" / "Changes" lists with per-file `+`/`−`, plus stage-all / unstage-all.
+- **Git-semantic action button** — "Commit" when there are uncommitted changes (auto-stages if nothing is staged), "Push" when the branch tracks a remote and is ahead, "Publish branch" when the branch has no upstream but has local commits.
+- **Pull** — one click to fetch the latest from all remotes and branches (`git fetch --all --prune`); shown only when a remote is configured.
+- **Branch management** — list / switch / create / delete (with confirmation).
+- **Remote management** — show / add / remove the origin remote (with confirmation).
+- **AI commit messages** — streaming, Conventional Commits, generated from the staged/working diff via the harness LLM (Chinese output by default).
+- **Commit-history graph** — an SVG lane graph of `git log --graph --all` (all branches + remotes), collapsed at the bottom of the panel; expands to half the panel height, virtual-scrolls long histories, expands a commit inline to its changed files, and shows a hover popover with message / author / date / hash (full hash copyable).
+- **Auto-refresh** — polls `git status` every 2.5 s so edits, commits and pushes made outside the panel show up.
+- **i18n** — English and Chinese UI.
+- **Cross-platform** — Windows, macOS and Linux; git runs unconfined so native TLS and credential helpers work everywhere.
+
+## Screenshots
+
+| Source-control panel | Commit history |
+| --- | --- |
+| ![Source-control panel](docs/images/panel.png) | ![Commit history](docs/images/history.png) |
+
+## Install
 
 ```sh
 dsh plugin --profile web add @majiexuan/dsh-git
-# 本地开发：
-# dsh plugin --profile web add ./path/to/dsh-git
 ```
 
-随后启动 `dsh web` 即可在右上角看到 Git 图标。
+Then start `dsh web`.
 
-## 本地构建
+## Build from source
 
 ```sh
-npm install        # 或 pnpm install
-npm run build      # 产出 lib/index.js（host）与 lib/client.js（client）
-npm run typecheck  # 类型检查
+npm install
+npm run build       # lib/index.js (host) + lib/client.js (client)
+npm run typecheck
 ```
 
-## 配置（可选，写入 profile 的 cordis.patch.yml）
+## Configuration
+
+Optional overrides in your profile `cordis.patch.yml`:
 
 ```yaml
 - id: git
   config:
-    maxDiffChars: 4000   # 交给模型的 diff 长度上限，超过即截断
-    provider: deepseek-official   # 可选，固定模型路由
-    model: deepseek-v4-flash
+    maxDiffChars: 4000     # cap on the diff text sent to the model (default 4000)
+    maxLogEntries: 2000    # max commit rows loaded for the history graph (default 2000)
+    provider: deepseek     # optional — pin the provider (defaults to the deployment model)
+    model: deepseek-chat   # optional — pin the model
+    reasoningEffort: off   # 'off' (default) disables thinking; 'high'/'max'/'default' passthrough
 ```
 
-## 结构
+## Structure
 
 ```
 src/
-├── shared/rpc.ts          # 端点名 + DTO（双端共用，防止漂移）
-├── host/                  # Node 半体
-│   ├── index.ts           # apply()：拦截 /api 的 git/* 端点（loopback）
-│   ├── git.ts             # ctx.shell 封装 git；消息/路径走 stdin，杜绝 shell 注入
-│   └── commit-message.ts  # diff 截断 + ctx.llm.stream 生成
-└── client/                # 浏览器半体
-    ├── index.tsx          # apply()：注册 shell.overlay 插槽 + 注入 RPC
-    ├── GitPanel.tsx       # 侧栏 UI
-    ├── rpc.ts             # ctx.connection.rpc.call 的类型化封装
-    ├── icons.tsx          # 占位图标（可自行替换 SVG path）
-    └── styles.ts          # 面板样式
+├── shared/rpc.ts             # endpoint names + DTOs, shared by both halves
+├── host/                     # Node half
+│   ├── index.ts              # git/* RPC endpoints (loopback-only)
+│   ├── git.ts                # ctx.shell wrapper; paths/messages via stdin (no shell injection)
+│   └── commit-message.ts     # diff truncation + ctx.llm.stream generation
+└── client/                   # browser half
+    ├── index.tsx             # slot registration + RPC + locale dictionary
+    ├── GitPanel.tsx          # source-control panel UI
+    ├── CommitGraph.tsx       # commit-history graph
+    ├── BranchMenu.tsx        # branch dropdown
+    ├── GitToggleButton.tsx   # sidebar-foot toggle
+    ├── rpc.ts                # typed RPC wrapper
+    ├── locale.ts             # zh/en dictionaries
+    ├── fileIcons.tsx         # file-type icons
+    ├── icons.tsx             # icon set
+    └── styles.ts             # panel stylesheet
 ```
 
-## 发布
+## Security
+
+- All `git/*` endpoints are registered with `authority: 'loopback'` (127.0.0.1 only).
+- User data is never interpolated into command strings — messages go via `git commit -F -`, paths via `--pathspec-from-file=-`, and branch/remote names and URLs are validated against safe character classes.
+
+## Publish
 
 ```sh
 npm publish
 ```
 
-并在 GitHub 仓库打上 [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic（官方唯一认可的被发现方式）。社区市场（如 awesome-deepseek-harness、dsh-plugin-marketplace）会据此收录。
+Tag the GitHub repo with [`dsh-plugin`](https://github.com/topics/dsh-plugin).
 
-## 安全边界
+## License
 
-所有 `git/*` RPC 端点以 `authority: 'loopback'` 注册，仅接受本机（`127.0.0.1`）请求；命令不拼接用户数据（消息经 `git commit -F -`、路径经 `--pathspec-from-file=-` 走 stdin）。
+MIT
