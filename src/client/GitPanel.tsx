@@ -303,8 +303,6 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
           </div>
         </header>
 
-        {error ? <div className="dshgit-error">{error}</div> : null}
-
         {!cwd ? (
           <div className="dshgit-empty">尚未打开工作区</div>
         ) : !status ? (
@@ -482,6 +480,8 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
             </div>
           </div>
         )}
+
+        {error ? <div className="dshgit-error">{error}</div> : null}
       </div>
 
       <BranchMenu

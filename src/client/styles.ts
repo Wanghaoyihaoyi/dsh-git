@@ -51,7 +51,7 @@ export const PANEL_CSS = `
 .dshgit-row:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .dshgit-fileicon{flex:none;display:inline-flex;align-items:center}
 .dshgit-path{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
-.dshgit-error{padding:8px 10px;border:1px solid var(--dsw-alias-state-error-secondary);border-radius:8px;color:var(--dsw-alias-state-error-primary);background:var(--dsw-alias-interactive-bg-hover-danger)}
+.dshgit-error{flex:none;padding:8px 12px;border-top:1px solid var(--dsw-alias-state-error-secondary);color:var(--dsw-alias-state-error-primary);background:var(--dsw-alias-interactive-bg-hover-danger);font-size:13px;line-height:18px;word-break:break-all}
 .dshgit-branch-btn{display:flex;align-items:center;gap:6px;min-width:0;max-width:70%;border:none;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;padding:0;font-size:13px;line-height:16px;font-family:inherit}
 .dshgit-branch-btn:hover{color:var(--dsw-alias-label-primary)}
 .dshgit-branch-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
