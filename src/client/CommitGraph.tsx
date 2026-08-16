@@ -248,18 +248,24 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
               const incoming: GitLogCommit[] = []
               const refsByHash = new Map<string, string[]>()
               let found = false
-              const consume = (list: GitLogCommit[]) => {
+              // Collect refs for the WHOLE page (so a ref moving off an older
+              // commit in it still updates), separately from finding new commits.
+              const collectRefs = (list: GitLogCommit[]) => {
+                for (const c of list) refsByHash.set(c.hash, c.refs)
+              }
+              const walkIncoming = (list: GitLogCommit[]) => {
                 for (const c of list) {
-                  refsByHash.set(c.hash, c.refs)
                   if (c.hash === currentHead) { found = true; return }
                   incoming.push(c)
                 }
               }
-              consume(firstPage.commits)
+              collectRefs(firstPage.commits)
+              walkIncoming(firstPage.commits)
               let offset = firstPage.commits.length
               for (let guard = 0; !found && guard < 20; guard++) {
                 const p = await git.logPage(cwd, offset, PAGE_SIZE)
-                consume(p.commits)
+                collectRefs(p.commits)
+                walkIncoming(p.commits)
                 if (p.commits.length === 0 || !p.hasMore) break
                 offset += p.commits.length
               }
