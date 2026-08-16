@@ -1,7 +1,7 @@
 {
   "name": "@majiexuan/dsh-git",
   "version": "0.1.0",
-  "description": "Git source-control sidebar for the DeepSeek Harness web UI: repo init, per-file staging, commit, push, and AI-generated Conventional Commits messages.",
+  "description": "Git source-control sidebar for the DeepSeek Harness web UI: repo init, staging, commit/push/pull, branch & remote management, AI-generated Conventional Commits messages, and a commit-history graph.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -40,7 +40,8 @@
         "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-ui-layout",
         "@deepseek-ai/dsh-client-ui-sidebar",
-        "@deepseek-ai/dsh-client-connection"
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-ui-primitives"
       ],
       "platform": "web"
     }
@@ -57,7 +58,8 @@
     "@deepseek-ai/dsh-client-ui-layout": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-sidebar": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6"
+    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "^3.18.1"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
@@ -75,7 +77,8 @@
     "@deepseek-ai/dsh-client-ui-layout": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-sidebar": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6"
+    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "^3.18.1"
   },
   "scripts": {
     "build": "node build.mjs",
