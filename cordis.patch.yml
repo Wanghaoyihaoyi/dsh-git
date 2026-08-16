@@ -1,0 +1,13 @@
+# @majiexuan/dsh-git — git source-control sidebar bundle.
+#
+# One insert: the host plugin row. Its browser half is discovered automatically
+# because the package declares `dsh.client`; the client bundle is served under
+# /plugins and loaded by the web shell's module table. No second row is needed.
+#
+# Override the AI message-generation limits (or pin a provider/model) from a
+# profile's cordis.patch.yml by targeting the `git` id, e.g.:
+#   - id: git
+#     config: { maxDiffChars: 8000 }
+- insert:
+    - id: git
+      name: '@majiexuan/dsh-git'

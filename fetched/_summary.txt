@@ -1,0 +1,24 @@
+OK  docs/user/develop/basic/publish.md (8850 bytes)
+OK  docs/user/develop/basic/publish.zh.md (5339 bytes)
+OK  docs/user/develop/basic/index.md (3923 bytes)
+OK  docs/user/develop/basic/index.zh.md (2772 bytes)
+OK  docs/user/develop/basic/config.md (3144 bytes)
+OK  docs/user/develop/basic/tool.md (1790 bytes)
+OK  docs/user/develop/framework/service.md (3740 bytes)
+OK  apps/cli/reference/README.md (11810 bytes)
+OK  apps/cli/reference/README.zh.md (6660 bytes)
+OK  packages/bundle/base/cordis.patch.yml (18116 bytes)
+OK  packages/bundle/web-app/cordis.patch.yml (16231 bytes)
+OK  packages/bundle/base/README.md (3363 bytes)
+OK  packages/bundle/base/package.json (5455 bytes)
+OK  packages/boot/app-boot/package.json (2148 bytes)
+OK  docs/cordis-tutorial/01-first-plugin.md (3399 bytes)
+OK  docs/cordis-primer.zh.md (2024 bytes)
+OK  docs/development.md (15675 bytes)
+OK  docs/cookbook/adding-a-package.md (12164 bytes)
+ERR vlln/plugin-registry meta: HTTP 403 for https://api.github.com/repos/vlln/plugin-registry
+ERR YELEBAI/dsh-plugin-marketplace meta: HTTP 403 for https://api.github.com/repos/YELEBAI/dsh-plugin-marketplace
+ERR HubaKing/dsh-community-plugins meta: HTTP 403 for https://api.github.com/repos/HubaKing/dsh-community-plugins
+ERR 0xsline/awesome-deepseek-harness meta: HTTP 403 for https://api.github.com/repos/0xsline/awesome-deepseek-harness
+ERR NanmiCoder/dsh-agent-teams meta: HTTP 403 for https://api.github.com/repos/NanmiCoder/dsh-agent-teams
+ERR discussion 1629: HTTP 403 for https://api.github.com/repos/deepseek-ai/deepseek-harness/discussions/1629

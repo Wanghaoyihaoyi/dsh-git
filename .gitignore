@@ -1,0 +1,6 @@
+node_modules/
+lib/
+.npm-cache/
+.pnpm-store/
+.dsh-verify/
+*.log
