@@ -1,17 +1,24 @@
 // Commit-history graph, docked at the bottom of the git panel. Collapsed to a
 // single header bar by default; expanding it splits the vertical space evenly
-// with the file list. Graph lines are drawn as SVG (continuous across rows) with
-// git's own lane colors; rows are virtualized and a commit expands inline to its
-// changed-files list, while hovering it shows a detail popover on the left.
+// with the file list.
+//
+// The host returns paged raw topology (no `--graph`); this component owns lane
+// drawing via `graph.ts`, so it can page lazily — scrolling near the bottom
+// loads the next page and extends the lanes without tearing the graph. Lanes are
+// drawn as smooth rounded SVG bends with a soft palette; the graph column width
+// shrinks when there are many lanes so the commit text is never pushed off the
+// edge. Rows are virtualized; a commit expands inline to its changed files, and
+// hovering it shows a detail popover on the left.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { UIEvent } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { GitApi } from './rpc.js'
-import type { GitCommitDetail, GitGraphCell, GitLogRow } from '../shared/rpc.js'
+import type { GitCommitDetail } from '../shared/rpc.js'
+import { advance, createCursor, type GraphCursor, type GraphRow } from './graph.js'
 import { CopyIcon, RefreshIcon } from './icons.js'
 
-const ROW_H = 24
-const COL_W = 14
+const ROW_H = 26
+const EDGE_H = 16
 const OVERSCAN = 8
 const FILE_ROW_H = 22
 const FILES_PAD = 8
@@ -20,16 +27,17 @@ const NOTE_H = 28
 const HOVER_MARGIN = 8
 /** Poll interval for auto-refreshing the history graph while it is expanded. */
 const HISTORY_POLL_MS = 4000
-
-/** Cheap stable fingerprint of a log snapshot (count + commit hashes + refs). */
-function logFingerprint(rows: GitLogRow[]): string {
-  let out = String(rows.length)
-  for (const row of rows) {
-    const commit = row.commit
-    out += commit === undefined ? '|-' : `|${commit.hash}:${commit.refs.join(';')}`
-  }
-  return out
-}
+/** Commits fetched per page. */
+const PAGE_SIZE = 500
+/** Lane pitch is clamped so many branches shrink instead of pushing text out. */
+const LANE_W_MIN = 6
+const LANE_W_MAX = 16
+/** Minimum width reserved for the commit text column. */
+const DESC_MIN = 110
+/** Gap between the graph and the text column. */
+const GRAPH_RIGHT_GAP = 10
+/** Scroll distance from the bottom that triggers loading the next page. */
+const LOAD_MORE_THRESHOLD = 240
 
 type DetailState =
   | { status: 'loading' }
@@ -70,8 +78,9 @@ function blockHeight(detail: DetailState | undefined): number {
   return NOTE_H
 }
 
-function rowHeight(row: GitLogRow, expanded: Set<string>, details: Map<string, DetailState>): number {
-  if (row.commit === undefined || !expanded.has(row.commit.hash)) return ROW_H
+function rowHeight(row: GraphRow, expanded: Set<string>, details: Map<string, DetailState>): number {
+  if (row.commit === undefined) return EDGE_H
+  if (!expanded.has(row.commit.hash)) return ROW_H
   return ROW_H + blockHeight(details.get(row.commit.hash))
 }
 
@@ -86,28 +95,33 @@ function findStart(offsets: number[], y: number): number {
   return Math.max(0, lo - 1)
 }
 
-function GraphSvg({ cells, width, height }: { cells: GitGraphCell[]; width: number; height: number }) {
-  const cx = (col: number) => Math.max(0, col) * COL_W + COL_W / 2
-  const topBand = ROW_H
-  const cap = { strokeWidth: 1.6, strokeLinecap: 'round' as const }
+function GraphSvg({ cells, width, height, laneW, dotY }: { cells: GraphRow['cells']; width: number; height: number; laneW: number; dotY?: number }) {
+  const cx = (col: number) => col * laneW + laneW / 2
+  const cap = { strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   return (
     <svg className="dshgit-log-graph" width={width} height={height} aria-hidden="true">
       {cells.map((cell, i) => {
         const x = cx(cell.col)
-        const color = cell.color ?? 'var(--dsw-alias-label-secondary)'
-        switch (cell.ch) {
-          case '*':
-            return <circle key={i} cx={x} cy={ROW_H / 2} r={3.2} className="dshgit-log-dot" />
-          case '|':
-          case '.':
+        const color = cell.color
+        switch (cell.kind) {
+          case 'dot': {
+            const cy = dotY ?? height / 2
+            return (
+              <g key={i}>
+                {cell.up ? <line x1={x} y1={0} x2={x} y2={cy} stroke={color} {...cap} /> : null}
+                {cell.down ? <line x1={x} y1={cy} x2={x} y2={height} stroke={color} {...cap} /> : null}
+                <circle cx={x} cy={cy} r={3} fill={color} />
+              </g>
+            )
+          }
+          case 'vline':
             return <line key={i} x1={x} y1={0} x2={x} y2={height} stroke={color} {...cap} />
-          case '\\':
-            return <line key={i} x1={cx(cell.col - 1)} y1={0} x2={cx(cell.col + 1)} y2={topBand} stroke={color} {...cap} />
-          case '/':
-            return <line key={i} x1={cx(cell.col + 1)} y1={0} x2={cx(cell.col - 1)} y2={topBand} stroke={color} {...cap} />
-          case '_':
-          case '-':
-            return <line key={i} x1={cx(cell.col - 1)} y1={ROW_H / 2} x2={cx(cell.col + 1)} y2={ROW_H / 2} stroke={color} {...cap} />
+          case 'edge': {
+            const from = x
+            const to = cx(cell.toCol ?? cell.col)
+            const d = `M ${from} 0 C ${from} ${height * 0.35}, ${to} ${height * 0.65}, ${to} ${height}`
+            return <path key={i} d={d} fill="none" stroke={color} {...cap} />
+          }
           default:
             return null
         }
@@ -141,62 +155,89 @@ function FilesBlock({ state, t }: { state: DetailState | undefined; t: Translate
 
 export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
   const [open, setOpen] = useState(false)
-  const [rows, setRows] = useState<GitLogRow[] | null>(null)
+  const [rows, setRows] = useState<GraphRow[]>([])
+  const [maxCol, setMaxCol] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportHeight, setViewportHeight] = useState(0)
+  const [viewportWidth, setViewportWidth] = useState(0)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [details, setDetails] = useState<Map<string, DetailState>>(new Map())
   const [hover, setHover] = useState<{ hash: string; rowTop: number; right: number } | null>(null)
   const [hoverTop, setHoverTop] = useState(0)
   const [copied, setCopied] = useState(false)
+
+  const cursorRef = useRef<GraphCursor>(createCursor())
+  const offsetRef = useRef(0)
+  const hasMoreRef = useRef(false)
+  const loadingRef = useRef(false)
+  const firstCommitHashRef = useRef<string | undefined>(undefined)
   const viewportRef = useRef<HTMLDivElement>(null)
   const hoverRef = useRef<HTMLDivElement>(null)
   const hoverTimer = useRef<number | undefined>(undefined)
   const inFlight = useRef(new Set<string>())
   const copiedTimer = useRef<number | undefined>(undefined)
-  const lastFingerprintRef = useRef<string | null>(null)
+
+  const reset = useCallback(() => {
+    cursorRef.current = createCursor()
+    offsetRef.current = 0
+    hasMoreRef.current = false
+    firstCommitHashRef.current = undefined
+    setRows([])
+    setMaxCol(0)
+    setExpanded(new Set())
+    setDetails(new Map())
+  }, [])
 
   // The workspace changed: drop the stale graph and collapse.
   useEffect(() => {
-    setRows(null)
+    reset()
     setOpen(false)
-    setExpanded(new Set())
-    setDetails(new Map())
-    lastFingerprintRef.current = null
-  }, [cwd])
+  }, [cwd, reset])
 
-  const load = useCallback(async (force = false) => {
-    if (loading || (rows !== null && !force)) return
-    setLoading(true)
+  const loadNextPage = useCallback(async () => {
+    if (loadingRef.current) return
+    const first = offsetRef.current === 0
+    if (!first && !hasMoreRef.current) return
+    loadingRef.current = true
+    if (first) setLoading(true)
+    else setLoadingMore(true)
     onError(null)
     try {
-      const { rows: data } = await git.log(cwd)
-      setRows(data)
-      lastFingerprintRef.current = logFingerprint(data)
+      const page = await git.logPage(cwd, offsetRef.current, PAGE_SIZE)
+      const newRows = advance(cursorRef.current, page.commits)
+      setRows((prev) => (first ? newRows : [...prev, ...newRows]))
+      setMaxCol(cursorRef.current.maxCol)
+      offsetRef.current += page.commits.length
+      hasMoreRef.current = page.hasMore
+      if (first && page.commits.length > 0) firstCommitHashRef.current = page.commits[0].hash
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err))
     } finally {
+      loadingRef.current = false
       setLoading(false)
+      setLoadingMore(false)
     }
-  }, [git, cwd, loading, rows, onError])
+  }, [git, cwd, onError])
 
-  // Auto-refresh the graph while it is expanded (new commits/refs made outside
-  // the panel show up). A cheap fingerprint comparison keeps a no-op poll from
-  // re-rendering; skip while a manual load is in flight.
+  // Auto-refresh while expanded: if the newest commit changed outside the panel,
+  // reload from scratch so new commits/refs show up.
   useEffect(() => {
     if (!open || loading) return
     let disposed = false
     const timer = window.setInterval(() => {
       if (disposed) return
       void git
-        .log(cwd)
-        .then(({ rows: data }) => {
+        .logPage(cwd, 0, 1)
+        .then(({ commits }) => {
           if (disposed) return
-          const fingerprint = logFingerprint(data)
-          if (lastFingerprintRef.current === fingerprint) return
-          lastFingerprintRef.current = fingerprint
-          setRows(data)
+          const latest = commits[0]?.hash
+          const current = firstCommitHashRef.current
+          if (latest !== undefined && current !== undefined && latest !== current) {
+            reset()
+            void loadNextPage()
+          }
         })
         .catch(() => {
           // Transient poll failures are ignored; the next tick retries.
@@ -206,7 +247,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
       disposed = true
       window.clearInterval(timer)
     }
-  }, [open, loading, cwd, git])
+  }, [open, loading, cwd, git, reset, loadNextPage])
 
   const ensureDetail = useCallback(async (hash: string) => {
     if (details.get(hash) !== undefined || inFlight.current.has(hash)) return
@@ -223,9 +264,15 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
   }, [git, cwd, details])
 
   const toggle = useCallback(() => {
-    if (!open) void load()
-    setOpen(!open)
-  }, [open, load])
+    const next = !open
+    setOpen(next)
+    if (next && rows.length === 0) void loadNextPage()
+  }, [open, rows.length, loadNextPage])
+
+  const forceReload = useCallback(() => {
+    reset()
+    void loadNextPage()
+  }, [reset, loadNextPage])
 
   const toggleExpand = useCallback((hash: string) => {
     setExpanded((prev) => {
@@ -265,11 +312,14 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     })
   }, [])
 
-  // Track the expanded viewport height for windowing.
+  // Track the expanded viewport size for windowing + lane-width clamping.
   useEffect(() => {
     const el = viewportRef.current
     if (el === null) return
-    const update = () => setViewportHeight(el.clientHeight)
+    const update = () => {
+      setViewportHeight(el.clientHeight)
+      setViewportWidth(el.clientWidth)
+    }
     update()
     const observer = new ResizeObserver(update)
     observer.observe(el)
@@ -282,23 +332,22 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
   }, [])
 
   const onScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
-    setScrollTop(event.currentTarget.scrollTop)
-  }, [])
+    const el = event.currentTarget
+    setScrollTop(el.scrollTop)
+    if (hasMoreRef.current && !loadingRef.current && el.scrollTop + el.clientHeight >= el.scrollHeight - LOAD_MORE_THRESHOLD) {
+      void loadNextPage()
+    }
+  }, [loadNextPage])
 
-  const { offsets, totalHeight, graphWidth } = useMemo(() => {
-    if (rows === null) return { offsets: [0], totalHeight: 0, graphWidth: 0 }
+  const { offsets, totalHeight } = useMemo(() => {
     const offsets = new Array<number>(rows.length + 1)
     offsets[0] = 0
-    let maxCol = 0
-    for (let i = 0; i < rows.length; i++) {
-      offsets[i + 1] = offsets[i] + rowHeight(rows[i], expanded, details)
-      for (const cell of rows[i].graph) if (cell.col + 1 > maxCol) maxCol = cell.col + 1
-    }
-    return { offsets, totalHeight: offsets[rows.length], graphWidth: maxCol * COL_W }
+    for (let i = 0; i < rows.length; i++) offsets[i + 1] = offsets[i] + rowHeight(rows[i], expanded, details)
+    return { offsets, totalHeight: offsets[rows.length] }
   }, [rows, expanded, details])
 
   const { start, end } = useMemo(() => {
-    if (rows === null || rows.length === 0) return { start: 0, end: 0 }
+    if (rows.length === 0) return { start: 0, end: 0 }
     const start = Math.max(0, findStart(offsets, scrollTop) - OVERSCAN)
     let end = start
     const bottom = scrollTop + viewportHeight
@@ -307,8 +356,17 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     return { start, end }
   }, [rows, offsets, scrollTop, viewportHeight])
 
+  // Lane pitch shrinks as branches accumulate, so the text column always keeps
+  // at least DESC_MIN px regardless of how wide the graph wants to be.
+  const colCount = maxCol + 1
+  const { laneW, graphWidth } = useMemo(() => {
+    const avail = Math.max(0, viewportWidth - DESC_MIN - GRAPH_RIGHT_GAP)
+    const laneW = Math.max(LANE_W_MIN, Math.min(LANE_W_MAX, avail / Math.max(1, colCount)))
+    return { laneW, graphWidth: colCount * laneW }
+  }, [colCount, viewportWidth])
+
   const hoverDetail = hover !== null ? details.get(hover.hash) : undefined
-  const hoverCommit = hover !== null && rows !== null
+  const hoverCommit = hover !== null
     ? rows.find((row) => row.commit?.hash === hover.hash)?.commit
     : undefined
 
@@ -321,8 +379,6 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     const el = hoverRef.current
     if (el === null || hover === null) return
     const height = el.getBoundingClientRect().height
-    // The card's max-height is 60vh, so a viewport floor of HOVER_MARGIN always
-    // leaves room; Math.max guards against a pathological oversized card.
     const maxTop = Math.max(HOVER_MARGIN, window.innerHeight - height - HOVER_MARGIN)
     setHoverTop(Math.max(HOVER_MARGIN, Math.min(hover.rowTop, maxTop)))
   }, [hover, hoverDetail])
@@ -337,10 +393,10 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
         <button
           className="dshgit-ghost"
           title={t('refreshHistory')}
-          disabled={loading}
+          disabled={loading || loadingMore}
           onClick={(event) => {
             event.stopPropagation()
-            void load(true)
+            forceReload()
           }}
         >
           <RefreshIcon size={14} />
@@ -349,9 +405,9 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
 
       {open ? (
         <div className="dshgit-log-viewport" ref={viewportRef} onScroll={onScroll}>
-          {loading || rows === null ? (
-            <div className="dshgit-log-empty">{loading ? t('loading') : ''}</div>
-          ) : rows.length === 0 ? (
+          {loading && rows.length === 0 ? (
+            <div className="dshgit-log-empty">{t('loading')}</div>
+          ) : !loading && rows.length === 0 ? (
             <div className="dshgit-log-empty">{t('noHistory')}</div>
           ) : (
             <div style={{ height: totalHeight, position: 'relative' }}>
@@ -360,14 +416,23 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
                 const commit = row.commit
                 const fullHeight = rowHeight(row, expanded, details)
                 const isExpanded = commit !== undefined && expanded.has(commit.hash)
+                // Right-most column this row actually draws, so the text hugs the
+                // line instead of clearing the whole (global) graph width.
+                let rowRight = 0
+                for (const cell of row.cells) {
+                  const c = cell.kind === 'edge' ? Math.max(cell.col, cell.toCol) : cell.col
+                  if (c > rowRight) rowRight = c
+                }
+                const textLeft = (rowRight + 1) * laneW + GRAPH_RIGHT_GAP
+                const graphHeight = commit !== undefined ? fullHeight : EDGE_H
                 return (
                   <div key={i} style={{ position: 'absolute', top: offsets[i], left: 0, right: 0, height: fullHeight }}>
-                    <GraphSvg cells={row.graph} width={graphWidth} height={fullHeight} />
+                    <GraphSvg cells={row.cells} width={graphWidth} height={graphHeight} laneW={laneW} dotY={commit !== undefined ? ROW_H / 2 : undefined} />
                     {commit !== undefined ? (
                       <button
                         type="button"
                         className="dshgit-log-commit"
-                        style={{ position: 'absolute', top: 0, left: graphWidth + 6, right: 0, height: ROW_H }}
+                        style={{ position: 'absolute', top: 0, left: textLeft, right: 0, height: ROW_H }}
                         onClick={() => toggleExpand(commit.hash)}
                         onMouseEnter={(event) => showPopover(commit.hash, event.currentTarget)}
                         onMouseLeave={scheduleHide}
@@ -384,7 +449,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
                       </button>
                     ) : null}
                     {isExpanded ? (
-                      <div style={{ position: 'absolute', top: ROW_H, left: graphWidth + 6, right: 0 }}>
+                      <div style={{ position: 'absolute', top: ROW_H, left: textLeft, right: 0 }}>
                         <FilesBlock state={details.get(commit.hash)} t={t} />
                       </div>
                     ) : null}

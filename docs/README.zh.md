@@ -14,7 +14,7 @@
 - **分支管理**：列表 / 切换 / 创建 / 删除（带确认）。
 - **远程管理**：显示 / 添加 / 删除 origin 远程（带确认）。
 - **AI 提交信息**：流式生成 Conventional Commits 信息，基于暂存/工作区 diff 调用 harness LLM（默认中文输出）。
-- **提交历史图**：`git log --graph --all` 的 SVG 车道图（所有分支 + 远程），默认收起在面板底部；展开后占面板一半高度，长历史虚拟滚动，点击提交内联展开改动文件，悬浮显示提交信息 / 作者 / 日期 / hash（可复制完整 hash）。
+- **提交历史图**：所有分支 + 远程的 SVG 车道图（车道拓扑在前端计算，圆角曲线、柔和配色），默认收起在面板底部；展开后占面板一半高度，长历史虚拟滚动 + 滚动到底分页加载，点击提交内联展开改动文件，悬浮显示提交信息 / 作者 / 日期 / hash（可复制完整 hash）。
 - **自动刷新**：每 2.5 秒轮询 `git status`，面板外的编辑、提交、推送都能自动同步。
 - **多语言**：中英双语界面。
 - **跨平台**：Windows / macOS / Linux；git 以无约束方式运行，原生 TLS 与凭证助手在各平台都可用。
@@ -61,7 +61,7 @@ npm run typecheck
 - id: git
   config:
     maxDiffChars: 4000     # 交给模型的 diff 长度上限（默认 4000）
-    maxLogEntries: 2000    # 提交历史图加载的最大行数（默认 2000）
+    maxLogEntries: 2000    # 提交历史图每页加载的最大提交数（默认 2000；滚动到底继续加载）
     provider: deepseek     # 可选，固定 provider（缺省用部署默认模型）
     model: deepseek-chat   # 可选，固定 model
     reasoningEffort: off   # 'off'（默认）关闭思考；'high'/'max'/'default' 透传
@@ -79,7 +79,8 @@ src/
 └── client/                   # 浏览器半体
     ├── index.tsx             # 槽位注册 + RPC + 语言字典
     ├── GitPanel.tsx          # 源代码管理面板 UI
-    ├── CommitGraph.tsx       # 提交历史图
+    ├── CommitGraph.tsx       # 提交历史图（分页 + 虚拟滚动）
+    ├── graph.ts              # 前端车道/拓扑计算
     ├── BranchMenu.tsx        # 分支下拉
     ├── GitToggleButton.tsx   # 侧栏底部开关
     ├── rpc.ts                # 类型化 RPC 封装

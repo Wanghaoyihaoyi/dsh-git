@@ -14,7 +14,7 @@ A VS Code–like **Git Source Control panel** for the [DeepSeek Harness](https:/
 - **Branch management** — list / switch / create / delete (with confirmation).
 - **Remote management** — show / add / remove the origin remote (with confirmation).
 - **AI commit messages** — streaming, Conventional Commits, generated from the staged/working diff via the harness LLM (Chinese output by default).
-- **Commit-history graph** — an SVG lane graph of `git log --graph --all` (all branches + remotes), collapsed at the bottom of the panel; expands to half the panel height, virtual-scrolls long histories, expands a commit inline to its changed files, and shows a hover popover with message / author / date / hash (full hash copyable).
+- **Commit-history graph** — a lazily-paged SVG lane graph of all branches + remotes (lane topology computed client-side, rounded bends, soft palette), collapsed at the bottom of the panel; expands to half the panel height, virtual-scrolls and loads the next page as you scroll, expands a commit inline to its changed files, and shows a hover popover with message / author / date / hash (full hash copyable).
 - **Auto-refresh** — polls `git status` every 2.5 s so edits, commits and pushes made outside the panel show up.
 - **i18n** — English and Chinese UI.
 - **Cross-platform** — Windows, macOS and Linux; git runs unconfined so native TLS and credential helpers work everywhere.
@@ -63,7 +63,7 @@ Optional overrides in your profile `cordis.patch.yml`:
 - id: git
   config:
     maxDiffChars: 4000     # cap on the diff text sent to the model (default 4000)
-    maxLogEntries: 2000    # max commit rows loaded for the history graph (default 2000)
+    maxLogEntries: 2000    # max commits per page for the history graph (default 2000; scroll to load more)
     provider: deepseek     # optional — pin the provider (defaults to the deployment model)
     model: deepseek-chat   # optional — pin the model
     reasoningEffort: off   # 'off' (default) disables thinking; 'high'/'max'/'default' passthrough
@@ -81,7 +81,8 @@ src/
 └── client/                   # browser half
     ├── index.tsx             # slot registration + RPC + locale dictionary
     ├── GitPanel.tsx          # source-control panel UI
-    ├── CommitGraph.tsx       # commit-history graph
+    ├── CommitGraph.tsx       # commit-history graph (paged, virtualized)
+    ├── graph.ts              # client-side lane/topology calculator
     ├── BranchMenu.tsx        # branch dropdown
     ├── GitToggleButton.tsx   # sidebar-foot toggle
     ├── rpc.ts                # typed RPC wrapper

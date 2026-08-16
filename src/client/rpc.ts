@@ -7,7 +7,7 @@ import {
   GIT_RPC,
   type GitBranch,
   type GitCommitDetail,
-  type GitLogRow,
+  type GitLogPage,
   type GitRemote,
   type GitStatus,
   type GenerateMessageStartResponse,
@@ -25,7 +25,7 @@ export interface GitApi {
   push(cwd: string, signal?: AbortSignal): Promise<{ pushed: true }>
   publish(cwd: string, signal?: AbortSignal): Promise<GitStatus>
   pull(cwd: string, signal?: AbortSignal): Promise<GitStatus>
-  log(cwd: string, signal?: AbortSignal): Promise<{ rows: GitLogRow[] }>
+  logPage(cwd: string, offset: number, limit: number, signal?: AbortSignal): Promise<GitLogPage>
   commitDetail(cwd: string, hash: string, signal?: AbortSignal): Promise<GitCommitDetail>
   generateMessageStart(cwd: string, signal?: AbortSignal): Promise<GenerateMessageStartResponse>
   generateMessagePoll(requestId: string, signal?: AbortSignal): Promise<GenerateMessagePollResponse>
@@ -62,7 +62,7 @@ export function createGitApi(call: Caller): GitApi {
     push: (cwd, signal) => unwrap(call, GIT_RPC.push, { cwd }, signal),
     publish: (cwd, signal) => unwrap(call, GIT_RPC.publish, { cwd }, signal),
     pull: (cwd, signal) => unwrap(call, GIT_RPC.pull, { cwd }, signal),
-    log: (cwd, signal) => unwrap(call, GIT_RPC.log, { cwd }, signal),
+    logPage: (cwd, offset, limit, signal) => unwrap(call, GIT_RPC.logPage, { cwd, offset, limit }, signal),
     commitDetail: (cwd, hash, signal) => unwrap(call, GIT_RPC.commitDetail, { cwd, hash }, signal),
     generateMessageStart: (cwd, signal) => unwrap(call, GIT_RPC.generateMessageStart, { cwd }, signal),
     generateMessagePoll: (requestId, signal) => unwrap(call, GIT_RPC.generateMessagePoll, { requestId }, signal),

@@ -14,7 +14,7 @@ export const GIT_RPC = {
   push: 'git/push',
   publish: 'git/publish',
   pull: 'git/pull',
-  log: 'git/log',
+  logPage: 'git/logPage',
   commitDetail: 'git/commitDetail',
   generateMessageStart: 'git/generateMessageStart',
   generateMessagePoll: 'git/generateMessagePoll',
@@ -55,6 +55,7 @@ export interface GitBranch {
 export interface GitLogCommit {
   hash: string
   shortHash: string
+  /** Full parent hashes (space-separated `%P`), used to wire the lane topology. */
   parents: string[]
   author: string
   /** Strict ISO-8601 author date (`%aI`). */
@@ -64,20 +65,18 @@ export interface GitLogCommit {
   subject: string
 }
 
-/** One colored cell of a graph line (spaces omitted; `col` is the character column). */
-export interface GitGraphCell {
-  col: number
-  /** One of `*` (commit), `|`, `\`, `/`, `_`, `-`, `.` */
-  ch: string
-  /** CSS color for the line, or null for the commit marker (`*`). */
-  color: string | null
+/** One page of commit-log topology (no graph — the client computes the lanes). */
+export interface GitLogPage {
+  commits: GitLogCommit[]
+  /** True when there are more commits after this page. */
+  hasMore: boolean
 }
 
-/** One row of the history view: graph cells + the commit on commit rows. */
-export interface GitLogRow {
-  graph: GitGraphCell[]
-  /** Undefined on graph-only rows (e.g. "|\\", "|/" continuation lines). */
-  commit?: GitLogCommit
+export interface GitLogPageRequest extends GitRpcRequest {
+  /** 0-based offset into `git log --all --date-order`. */
+  offset?: number
+  /** Page size (positive; capped server-side). */
+  limit?: number
 }
 
 export interface GitFileChange {

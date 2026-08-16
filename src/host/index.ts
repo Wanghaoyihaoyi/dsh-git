@@ -16,8 +16,8 @@ import {
   type GitCommitDetail,
   type GitEndpoint,
   type GitFileChange,
-  type GitGraphCell,
-  type GitLogRow,
+  type GitLogCommit,
+  type GitLogPage,
   type GitRemote,
   type GitStatus,
 } from '../shared/rpc.js'
@@ -128,8 +128,11 @@ async function dispatch(
       return gitPublish(ctx, cwd, signal)
     case GIT_RPC.pull:
       return gitPull(ctx, cwd, signal)
-    case GIT_RPC.log:
-      return gitLog(ctx, cwd, signal, config)
+    case GIT_RPC.logPage: {
+      const offset = readOffset(payload)
+      const limit = readLimit(payload)
+      return gitLogPage(ctx, cwd, signal, offset, limit, config)
+    }
     case GIT_RPC.commitDetail: {
       const hash = readHash(payload)
       return gitCommitDetail(ctx, cwd, hash, signal)
@@ -383,91 +386,78 @@ async function gitPull(ctx: Context, cwd: string, signal: AbortSignal): Promise<
   return gitStatus(ctx, cwd, signal)
 }
 
-const LOG_FORMAT = '%H%x1f%P%x1f%an%x1f%aI%x1f%D%x1f%s'
+const LOG_PAGE_FORMAT = '%H%x1f%P%x1f%an%x1f%aI%x1f%D%x1f%s'
 
-async function gitLog(ctx: Context, cwd: string, signal: AbortSignal, config: ResolvedConfig): Promise<{ rows: GitLogRow[] }> {
-  const limit = Math.max(1, Math.min(config.maxLogEntries ?? 2000, 20000))
+/**
+ * Paged commit topology for the history graph. The client owns lane drawing, so
+ * we return raw parent links (no `--graph`): `--skip` then pages cleanly without
+ * tearing the graph apart at page boundaries.
+ */
+async function gitLogPage(
+  ctx: Context,
+  cwd: string,
+  signal: AbortSignal,
+  offset: number,
+  limit: number,
+  config: ResolvedConfig,
+): Promise<GitLogPage> {
+  const cap = Math.max(1, Math.min(config.maxLogEntries ?? 2000, 2000))
+  const pageSize = Math.max(1, Math.min(limit, cap))
   const result = await git(ctx.shell, [
     'log',
-    '--graph',
     '--all',
     '--date-order',
-    '--color=always',
     '--max-count',
-    String(limit),
-    // `%x1e` opens each record so the graph prefix can be split off reliably.
-    `--format=%x1e${LOG_FORMAT}`,
+    String(pageSize + 1),
+    '--skip',
+    String(offset),
+    `--format=${LOG_PAGE_FORMAT}`,
   ], { cwd, signal })
-  if (result.exitCode !== 0) return { rows: [] }
-  return { rows: parseLog(stdoutText(result)) }
+  if (result.exitCode !== 0) return { commits: [], hasMore: false }
+  const commits = parseLogPage(stdoutText(result))
+  const hasMore = commits.length > pageSize
+  if (hasMore) commits.pop()
+  return { commits, hasMore }
 }
 
-/** ANSI reset codes → default (no) color. */
-const ANSI_RESET = new Set(['', '0', '00'])
-/** Map git's graph ANSI palette to theme-neutral CSS colors. */
-const ANSI_COLORS: Record<string, string> = {
-  '31': '#e0554f', '32': '#4caf50', '33': '#e6a23c', '34': '#4a86c8',
-  '35': '#9c27b0', '36': '#00b4d8', '37': '#9ca3af',
-  '1;31': '#ff7a72', '1;32': '#7bd88f', '1;33': '#f5c26b', '1;34': '#6ea8ff',
-  '1;35': '#c58bff', '1;36': '#5fd8f0', '1;37': '#d1d5db',
-}
-
-/** Parse a `--color=always` graph prefix into colored cells (spaces dropped). */
-function parseGraph(graphText: string): GitGraphCell[] {
-  const cells: GitGraphCell[] = []
-  let col = 0
-  let color: string | null = null
-  let i = 0
-  while (i < graphText.length) {
-    const ch = graphText[i]
-    if (ch === '\x1b') {
-      const end = graphText.indexOf('m', i)
-      if (end < 0) break
-      const code = graphText.slice(i + 2, end)
-      color = ANSI_RESET.has(code) ? null : ANSI_COLORS[code] ?? color
-      i = end + 1
-      continue
-    }
-    if (ch !== ' ') cells.push({ col, ch, color })
-    col++
-    i++
+function readOffset(payload: unknown): number {
+  const offset = (payload as { offset?: unknown } | null | undefined)?.offset
+  if (offset === undefined) return 0
+  if (typeof offset !== 'number' || !Number.isSafeInteger(offset) || offset < 0) {
+    throw new Error('offset must be a non-negative integer')
   }
-  return cells
+  return offset
 }
 
-/** Split `git log --graph --format=…` output into graph rows + commit records. */
-function parseLog(output: string): GitLogRow[] {
-  const rows: GitLogRow[] = []
+function readLimit(payload: unknown): number {
+  const limit = (payload as { limit?: unknown } | null | undefined)?.limit
+  if (limit === undefined) return 500
+  if (typeof limit !== 'number' || !Number.isSafeInteger(limit) || limit <= 0) {
+    throw new Error('limit must be a positive integer')
+  }
+  return limit
+}
+
+/** Split `git log --format=…` output into commit records (full parent hashes). */
+function parseLogPage(output: string): GitLogCommit[] {
+  const commits: GitLogCommit[] = []
   for (const rawLine of output.split('\n')) {
     const line = rawLine.endsWith('\r') ? rawLine.slice(0, -1) : rawLine
     if (line.length === 0) continue
-    const rs = line.indexOf('\x1e')
-    if (rs < 0) {
-      // Graph-only row (e.g. "|\\", "|/") with no commit.
-      rows.push({ graph: parseGraph(line) })
-      continue
-    }
-    const graph = parseGraph(line.slice(0, rs))
-    const fields = line.slice(rs + 1).split('\x1f')
+    const fields = line.split('\x1f')
     const hash = fields[0] ?? ''
-    if (hash === '') {
-      rows.push({ graph })
-      continue
-    }
-    rows.push({
-      graph,
-      commit: {
-        hash,
-        shortHash: hash.slice(0, 7),
-        parents: (fields[1] ?? '').split(' ').filter(Boolean).map((p) => p.slice(0, 7)),
-        author: fields[2] ?? '',
-        date: fields[3] ?? '',
-        refs: (fields[4] ?? '').split(',').map((s) => s.trim()).filter(Boolean),
-        subject: fields[5] ?? '',
-      },
+    if (hash === '') continue
+    commits.push({
+      hash,
+      shortHash: hash.slice(0, 7),
+      parents: (fields[1] ?? '').split(' ').filter(Boolean),
+      author: fields[2] ?? '',
+      date: fields[3] ?? '',
+      refs: (fields[4] ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+      subject: fields[5] ?? '',
     })
   }
-  return rows
+  return commits
 }
 
 async function gitCommitDetail(ctx: Context, cwd: string, hash: string, signal: AbortSignal): Promise<GitCommitDetail> {
