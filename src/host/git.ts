@@ -1,14 +1,19 @@
 // Host-side git command wrapper over the harness `ctx.shell` executor.
 //
-// All commands run through `ctx.shell` (the same sandbox/policy-consistent
-// executor the model's `bash`/`pwsh` tools use) rather than `child_process`,
-// so the git sidebar obeys the deployment's execution policy.
+// Git runs UNCONFINED (`danger-full-access` sandbox policy). The sandbox's
+// restricted Windows token breaks git's normal operation: schannel (TLS) cannot
+// read the interactive user's credentials (`SEC_E_NO_CREDENTIALS`) and MSYS2
+// `sh.exe` — which git uses to run credential helpers — cannot create its shared
+// memory (`CreateFileMapping … error 5`). Running with the user's full token is
+// exactly how VSCode (and every desktop git client) invokes git, so push/pull
+// and credential helpers work normally. No user git config is touched.
 //
 // Quoting discipline: we NEVER interpolate user data (paths, messages) into the
 // command string. Messages go via `git commit -F -` (stdin) and paths via
 // `--pathspec-from-file=-` (stdin, one literal pathspec per line), so paths and
 // messages containing spaces/quotes/metacharacters cannot break the shell or
 // escape the command.
+import path from 'node:path'
 import type { ShellExecutor, ShellRunResult } from '@deepseek-ai/dsh-shell'
 
 export interface GitRunOptions {
@@ -26,15 +31,6 @@ const GIT_ENV: Record<string, string> = {
 
 const STDOUT_CAP = 1024 * 1024 // 1 MiB is ample for status/diff parsing.
 
-// The DSH shell executor runs git in a restricted Windows security context where
-// schannel (the default TLS backend) cannot read the interactive user's
-// credentials and fails with `SEC_E_NO_CREDENTIALS`. Force the bundled OpenSSL
-// backend on Windows so network ops (push/pull/fetch) do TLS without schannel.
-// `-c` scopes this to the one invocation — the user's own git config is untouched.
-const SSL_BACKEND_ARGS: string[] = process.platform === 'win32'
-  ? ['-c', 'http.sslBackend=openssl']
-  : []
-
 export async function git(
   shell: ShellExecutor,
   args: string[],
@@ -42,12 +38,20 @@ export async function git(
 ): Promise<ShellRunResult> {
   return shell.run(
     shell.resolve({
-      command: ['git', ...SSL_BACKEND_ARGS, ...args].join(' '),
+      command: ['git', ...args].join(' '),
       workdir: opts.cwd,
       signal: opts.signal,
       stdin: opts.stdin,
       stdoutMaxBytes: STDOUT_CAP,
       env: GIT_ENV,
+      // `danger-full-access` deliberately bypasses the sandbox backend (the
+      // executor runs the command through the plain local runner), so git keeps
+      // the user's full Windows token. `workspaceRoot` is carried but unused
+      // under this mode; it must still be an absolute path.
+      sandboxPolicy: {
+        mode: 'danger-full-access',
+        workspaceRoot: path.resolve(opts.cwd ?? process.cwd()),
+      },
     }),
   )
 }
