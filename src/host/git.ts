@@ -26,6 +26,15 @@ const GIT_ENV: Record<string, string> = {
 
 const STDOUT_CAP = 1024 * 1024 // 1 MiB is ample for status/diff parsing.
 
+// The DSH shell executor runs git in a restricted Windows security context where
+// schannel (the default TLS backend) cannot read the interactive user's
+// credentials and fails with `SEC_E_NO_CREDENTIALS`. Force the bundled OpenSSL
+// backend on Windows so network ops (push/pull/fetch) do TLS without schannel.
+// `-c` scopes this to the one invocation — the user's own git config is untouched.
+const SSL_BACKEND_ARGS: string[] = process.platform === 'win32'
+  ? ['-c', 'http.sslBackend=openssl']
+  : []
+
 export async function git(
   shell: ShellExecutor,
   args: string[],
@@ -33,7 +42,7 @@ export async function git(
 ): Promise<ShellRunResult> {
   return shell.run(
     shell.resolve({
-      command: ['git', ...args].join(' '),
+      command: ['git', ...SSL_BACKEND_ARGS, ...args].join(' '),
       workdir: opts.cwd,
       signal: opts.signal,
       stdin: opts.stdin,
