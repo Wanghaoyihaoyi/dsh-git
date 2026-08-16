@@ -224,10 +224,10 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     }
   }, [git, cwd, onError])
 
-  // Auto-refresh while expanded: poll the newest commit's hash AND refs. New
-  // commits get prepended; ref changes (e.g. origin/main advancing after a push)
-  // update the existing commits' labels. Recomputed in one atomic swap, so the
-  // list never flickers and keeps its scroll position.
+  // Auto-refresh while expanded: fingerprint the newest page by hash + refs, so
+  // ANY change — a new commit, or a ref moving onto/off any commit in that page
+  // (e.g. origin/main advancing, or a tag being moved) — is caught, not just the
+  // head commit. The update is one atomic swap, so it never flickers.
   useEffect(() => {
     if (!open || loading || loadingMore) return
     let disposed = false
@@ -235,26 +235,33 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     const timer = window.setInterval(() => {
       if (disposed || refreshing) return
       void git
-        .logPage(cwd, 0, 1)
-        .then(({ commits }) => {
+        .logPage(cwd, 0, PAGE_SIZE)
+        .then((firstPage) => {
           if (disposed) return
-          const latest = commits[0]
-          const current = commitsRef.current[0]
-          if (latest === undefined || current === undefined) return
-          const hashChanged = latest.hash !== current.hash
-          const refsChanged = latest.refs.join(',') !== current.refs.join(',')
-          if (!hashChanged && !refsChanged) return
+          const fp = (list: GitLogCommit[]) => list.map((c) => `${c.hash}:${c.refs.join(',')}`).join('|')
+          const prev = commitsRef.current.slice(0, firstPage.commits.length)
+          if (fp(firstPage.commits) === fp(prev)) return
           refreshing = true
           void (async () => {
             try {
-              // One page covers both the new commits and the latest ref labels.
-              const page = await git.logPage(cwd, 0, PAGE_SIZE)
+              const currentHead = commitsRef.current[0]?.hash
               const incoming: GitLogCommit[] = []
               const refsByHash = new Map<string, string[]>()
-              for (const c of page.commits) {
-                refsByHash.set(c.hash, c.refs)
-                if (c.hash === current.hash) break
-                incoming.push(c)
+              let found = false
+              const consume = (list: GitLogCommit[]) => {
+                for (const c of list) {
+                  refsByHash.set(c.hash, c.refs)
+                  if (c.hash === currentHead) { found = true; return }
+                  incoming.push(c)
+                }
+              }
+              consume(firstPage.commits)
+              let offset = firstPage.commits.length
+              for (let guard = 0; !found && guard < 20; guard++) {
+                const p = await git.logPage(cwd, offset, PAGE_SIZE)
+                consume(p.commits)
+                if (p.commits.length === 0 || !p.hasMore) break
+                offset += p.commits.length
               }
               if (disposed) return
               const merged = [
