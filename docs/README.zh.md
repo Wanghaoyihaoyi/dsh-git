@@ -23,7 +23,7 @@
 
 | 源代码管理面板 | 提交历史 |
 | --- | --- |
-| ![源代码管理面板](docs/images/panel.png) | ![提交历史](docs/images/history.png) |
+| ![源代码管理面板](images/panel.png) | ![提交历史](images/history.png) |
 
 ## 安装
 
