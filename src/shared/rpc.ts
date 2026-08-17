@@ -25,6 +25,8 @@ export const GIT_RPC = {
   branchCreate: 'git/branchCreate',
   branchCheckout: 'git/branchCheckout',
   branchDelete: 'git/branchDelete',
+  checkUpdate: 'git/checkUpdate',
+  update: 'git/update',
 } as const
 
 export type GitEndpoint = (typeof GIT_RPC)[keyof typeof GIT_RPC]
@@ -155,4 +157,23 @@ export interface GenerateMessagePollResponse {
   text: string
   done: boolean
   error?: string
+}
+
+/** Result of the self-update version check (non-fatal on network failure). */
+export interface GitUpdateInfo {
+  /** Version installed right now (read from this plugin's own package.json). */
+  installed: string
+  /** Latest published version; absent when the registry check could not complete. */
+  latest?: string
+  /** True only when `latest` is known and newer than `installed`. */
+  hasUpdate: boolean
+  /** Human-readable reason when the check could not be completed (optional). */
+  error?: string
+}
+
+/** Result of a successful self-update. */
+export interface GitUpdateResult {
+  updated: true
+  /** Version now on disk (takes effect after a full restart + browser refresh). */
+  version: string
 }

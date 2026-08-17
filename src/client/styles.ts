@@ -126,4 +126,9 @@ export const PANEL_CSS = `
 .dshgit-hover-copied{font-size:12px;color:var(--dsw-alias-state-business-primary)}
 .dshgit-hover-note{color:var(--dsw-alias-label-secondary)}
 .dshgit-hover-error{color:var(--dsw-alias-state-error-primary)}
+.dshgit-foot-update{flex:none;display:inline-flex;align-items:center;color:var(--dsw-alias-state-business-primary)}
+.dshgit-update-link{flex:none;border:none;background:transparent;color:var(--dsw-alias-state-business-primary);cursor:pointer;padding:0;font-size:13px;line-height:16px;font-family:inherit}
+.dshgit-update-link:hover{text-decoration:underline}
+.dshgit-update-link:disabled{opacity:.6;cursor:default}
+.dshgit-notice{flex:none;padding:8px 12px;border-top:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-business-primary);background:var(--dsw-alias-interactive-bg-hover);font-size:13px;line-height:18px;word-break:break-all}
 `

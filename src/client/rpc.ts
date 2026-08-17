@@ -12,6 +12,8 @@ import {
   type GitStatus,
   type GenerateMessageStartResponse,
   type GenerateMessagePollResponse,
+  type GitUpdateInfo,
+  type GitUpdateResult,
 } from '../shared/rpc.js'
 
 export interface GitApi {
@@ -36,6 +38,8 @@ export interface GitApi {
   branchCreate(cwd: string, name: string, signal?: AbortSignal): Promise<GitBranch[]>
   branchCheckout(cwd: string, name: string, signal?: AbortSignal): Promise<GitStatus>
   branchDelete(cwd: string, name: string, signal?: AbortSignal): Promise<GitBranch[]>
+  checkUpdate(signal?: AbortSignal): Promise<GitUpdateInfo>
+  update(signal?: AbortSignal): Promise<GitUpdateResult>
 }
 
 type Caller = (
@@ -73,5 +77,7 @@ export function createGitApi(call: Caller): GitApi {
     branchCreate: (cwd, name, signal) => unwrap(call, GIT_RPC.branchCreate, { cwd, name }, signal),
     branchCheckout: (cwd, name, signal) => unwrap(call, GIT_RPC.branchCheckout, { cwd, name }, signal),
     branchDelete: (cwd, name, signal) => unwrap(call, GIT_RPC.branchDelete, { cwd, name }, signal),
+    checkUpdate: (signal) => unwrap(call, GIT_RPC.checkUpdate, {}, signal),
+    update: (signal) => unwrap(call, GIT_RPC.update, {}, signal),
   }
 }

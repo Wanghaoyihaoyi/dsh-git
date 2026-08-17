@@ -23,6 +23,7 @@ import {
 } from '../shared/rpc.js'
 import { assertSafe, git, gitOrThrow, SAFE_BRANCH, SAFE_HASH, SAFE_REMOTE, SAFE_URL, stdoutText } from './git.js'
 import { generateCommitMessage } from './commit-message.js'
+import { checkUpdateCached, updatePlugin } from './update.js'
 
 export const name = 'dsh-git'
 export const inject = ['shell', 'llm', 'connection', 'agentDefaultModel']
@@ -37,6 +38,8 @@ export const Config = z.object({
   model: z.string(),
   /** 'off' (default) disables DeepSeek thinking; 'high'/'max'/'default' passthrough. */
   reasoningEffort: z.string(),
+  /** Optional npm registry base URL for update checks (default https://registry.npmjs.org). */
+  registryUrl: z.string(),
 })
 
 interface ResolvedConfig {
@@ -45,6 +48,7 @@ interface ResolvedConfig {
   provider?: string
   model?: string
   reasoningEffort?: string
+  registryUrl?: string
 }
 
 export function apply(ctx: Context, config: ResolvedConfig = {}) {
@@ -99,6 +103,13 @@ async function dispatch(
   // generateMessagePoll carries only a requestId, not a cwd.
   if (endpoint === GIT_RPC.generateMessagePoll) {
     return gitGeneratePoll(payload)
+  }
+  // Self-update endpoints are plugin-scoped, not workspace-scoped: no cwd.
+  if (endpoint === GIT_RPC.checkUpdate) {
+    return checkUpdateCached(config.registryUrl)
+  }
+  if (endpoint === GIT_RPC.update) {
+    return updatePlugin(ctx.shell, signal, config.registryUrl)
   }
   const cwd = readCwd(payload)
   switch (endpoint as GitEndpoint) {

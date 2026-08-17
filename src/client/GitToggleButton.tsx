@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SidebarFooterActionOwnerProps } from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import { panelStore } from './panelStore.js'
-import { GitIcon } from './icons.js'
+import { GitIcon, UpdateIcon } from './icons.js'
 
 interface GitToggleProps extends SidebarFooterActionOwnerProps {
   toggleGit: () => void
@@ -14,6 +14,8 @@ interface GitToggleProps extends SidebarFooterActionOwnerProps {
 
 export function GitToggleButton({ wide, toggleGit, t }: GitToggleProps) {
   const open = useSyncExternalStore(panelStore.subscribe, panelStore.isOpen)
+  const update = useSyncExternalStore(panelStore.subscribe, panelStore.getUpdateState)
+  const hasUpdate = update.info?.hasUpdate ?? false
   return (
     <button
       type="button"
@@ -23,6 +25,11 @@ export function GitToggleButton({ wide, toggleGit, t }: GitToggleProps) {
     >
       <GitIcon size={16} />
       {wide ? <span className="dshgit-foot-label">{t('title')}</span> : null}
+      {hasUpdate ? (
+        <span className="dshgit-foot-update" title={t('updateAvailable')}>
+          <UpdateIcon size={14} />
+        </span>
+      ) : null}
     </button>
   )
 }

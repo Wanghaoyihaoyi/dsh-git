@@ -51,6 +51,10 @@ export type GitKey =
   | 'copyHash'
   | 'copied'
   | 'generating'
+  | 'updateAvailable'
+  | 'updateNow'
+  | 'updating'
+  | 'updateDone'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -104,6 +108,10 @@ export const gitZh: LocaleDictOf<'git'> = {
   copyHash: '复制完整 hash',
   copied: '已复制',
   generating: '生成提交信息',
+  updateAvailable: '有新版本可更新',
+  updateNow: '点击立即更新',
+  updating: '更新中…',
+  updateDone: '已更新到 v{version}，请完全重启 dsh web 并刷新浏览器以生效',
 }
 
 export const gitEn: LocaleDictOf<'git'> = {
@@ -152,4 +160,8 @@ export const gitEn: LocaleDictOf<'git'> = {
   copyHash: 'Copy full hash',
   copied: 'Copied',
   generating: 'Generating commit message',
+  updateAvailable: 'Update available',
+  updateNow: 'Click to update',
+  updating: 'Updating…',
+  updateDone: 'Updated to v{version}. Fully restart dsh web and refresh the browser to apply.',
 }

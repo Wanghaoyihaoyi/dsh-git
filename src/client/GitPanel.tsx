@@ -19,6 +19,7 @@ import {
   PullIcon,
   RefreshIcon,
   SparkleIcon,
+  UpdateIcon,
 } from './icons.js'
 
 function basename(path: string): string {
@@ -40,6 +41,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const open = useSyncExternalStore(panelStore.subscribe, panelStore.isOpen)
   const detailsOpen = useSyncExternalStore(panelStore.subscribe, panelStore.isDetailsOpen)
   const isNarrow = useIsNarrow()
+  const update = useSyncExternalStore(panelStore.subscribe, panelStore.getUpdateState)
   // The layout's `details` column is session-scoped: it renders nothing and is
   // forced closed while there is no non-blank current session (the New Session /
   // blank view). Track that so the root-scoped floating overlay can stand in.
@@ -123,6 +125,20 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   useEffect(() => {
     if (visible) void refresh()
   }, [visible, refresh])
+
+  // Self-update: silently check for a newer version the first time the panel is
+  // opened (per page load). The docked and floating panels both run this effect,
+  // so the store's `checking`/`checked` flags dedupe the request.
+  useEffect(() => {
+    if (!visible) return
+    const state = panelStore.getUpdateState()
+    if (state.checked || state.checking) return
+    panelStore.setUpdateState({ checking: true })
+    void git
+      .checkUpdate()
+      .then((info) => panelStore.setUpdateState({ info, checked: true, checking: false }))
+      .catch(() => panelStore.setUpdateState({ checked: true, checking: false }))
+  }, [visible, git])
 
   // Auto-refresh: poll `git status` while visible so edits/commits/pushes made
   // OUTSIDE the panel (terminal, VSCode, …) show up. Compare the serialized
@@ -259,7 +275,26 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
     }
   }, [git, cwd, busy, t])
 
+  const handleUpdate = useCallback(async () => {
+    const state = panelStore.getUpdateState()
+    if (state.updating) return
+    panelStore.setUpdateState({ updating: true })
+    try {
+      const result = await git.update()
+      panelStore.setUpdateState({
+        updating: false,
+        updatedVersion: result.version,
+        info: { installed: result.version, latest: result.version, hasUpdate: false },
+      })
+    } catch (err) {
+      panelStore.setUpdateState({ updating: false })
+      setError(err instanceof Error ? err.message : String(err))
+    }
+  }, [git])
+
   if (!visible) return null
+
+  const hasUpdate = update.info?.hasUpdate ?? false
 
   const isRepo = status?.isRepo ?? false
   const remote = status?.remote
@@ -291,6 +326,16 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
         <header className="dshgit-header">
           <div className="dshgit-title-row">
             <span className="dshgit-title">{t('title')}</span>
+            {hasUpdate ? (
+              <button
+                type="button"
+                className="dshgit-update-link"
+                disabled={update.updating}
+                onClick={() => void handleUpdate()}
+              >
+                {update.updating ? t('updating') : t('updateNow')}
+              </button>
+            ) : null}
             <button className="dshgit-ghost" title={t('refresh')} onClick={() => void refresh()} disabled={busy !== null}>
               <RefreshIcon size={16} />
             </button>
@@ -544,6 +589,10 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
             <CommitGraph git={git} cwd={cwd} onError={setError} t={t} />
           </div>
         )}
+
+        {update.updatedVersion ? (
+          <div className="dshgit-notice">{t('updateDone', { version: update.updatedVersion })}</div>
+        ) : null}
 
         {error ? <div className="dshgit-error">{error}</div> : null}
       </div>

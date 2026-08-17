@@ -72,6 +72,15 @@ export function RefreshIcon(props: IconProps) {
   )
 }
 
+/** Self-update available (arrow into a tray). */
+export function UpdateIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M8 2.5 13 7.5 11.4 9.1 8.75 6.45V11h-1.5V6.45L4.6 9.1 3 7.5 8 2.5ZM3 12.5h10V14H3v-1.5Z" />
+    </Svg>
+  )
+}
+
 /** Copy (clipboard). */
 export function CopyIcon(props: IconProps) {
   return (

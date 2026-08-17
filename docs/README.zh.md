@@ -16,6 +16,7 @@
 - **AI 提交信息**：流式生成 Conventional Commits 信息，基于暂存/工作区 diff 调用 harness LLM（默认中文输出）。
 - **提交历史图**：所有分支 + 远程的 SVG 车道图（车道拓扑在前端计算，圆角曲线、柔和配色），默认收起在面板底部；展开后占面板一半高度，长历史虚拟滚动 + 滚动到底分页加载，点击提交内联展开改动文件，悬浮显示提交信息 / 作者 / 日期 / hash（可复制完整 hash）。
 - **自动刷新**：每 2.5 秒轮询 `git status`，面板外的编辑、提交、推送都能自动同步。
+- **自动更新**：首次打开面板时静默检测 npm registry 是否有新版本；有新版本时，侧栏入口显示更新角标，面板顶部显示「点击立即更新」，更新后提示重启。
 - **多语言**：中英双语界面。
 - **跨平台**：Windows / macOS / Linux；git 以无约束方式运行，原生 TLS 与凭证助手在各平台都可用。
 
@@ -65,6 +66,7 @@ npm run typecheck
     provider: deepseek     # 可选，固定 provider（缺省用部署默认模型）
     model: deepseek-chat   # 可选，固定 model
     reasoningEffort: off   # 'off'（默认）关闭思考；'high'/'max'/'default' 透传
+    registryUrl: https://registry.npmjs.org  # 可选，更新检测所用的 npm registry 基址（默认 npmjs.org）
 ```
 
 ## 结构
@@ -75,7 +77,8 @@ src/
 ├── host/                     # Node 半体
 │   ├── index.ts              # git/* RPC 端点（仅 loopback）
 │   ├── git.ts                # ctx.shell 封装 git；路径/消息走 stdin（杜绝 shell 注入）
-│   └── commit-message.ts     # diff 截断 + ctx.llm.stream 生成
+│   ├── commit-message.ts     # diff 截断 + ctx.llm.stream 生成
+│   └── update.ts             # 自更新：npm 版本检测 + dsh plugin update 执行器
 └── client/                   # 浏览器半体
     ├── index.tsx             # 槽位注册 + RPC + 语言字典
     ├── GitPanel.tsx          # 源代码管理面板 UI

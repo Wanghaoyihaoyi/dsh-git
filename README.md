@@ -16,6 +16,7 @@ A VS Code–like **Git Source Control panel** for the [DeepSeek Harness](https:/
 - **AI commit messages** — streaming, Conventional Commits, generated from the staged/working diff via the harness LLM (Chinese output by default).
 - **Commit-history graph** — a lazily-paged SVG lane graph of all branches + remotes (lane topology computed client-side, rounded bends, soft palette), collapsed at the bottom of the panel; expands to half the panel height, virtual-scrolls and loads the next page as you scroll, expands a commit inline to its changed files, and shows a hover popover with message / author / date / hash (full hash copyable).
 - **Auto-refresh** — polls `git status` every 2.5 s so edits, commits and pushes made outside the panel show up.
+- **Self-update** — on first open the panel silently checks the npm registry for a newer version; when one exists, an update badge appears on the sidebar entry and a one-click "update now" link shows in the panel header, followed by a restart prompt.
 - **i18n** — English and Chinese UI.
 - **Cross-platform** — Windows, macOS and Linux; git runs unconfined so native TLS and credential helpers work everywhere.
 
@@ -67,6 +68,7 @@ Optional overrides in your profile `cordis.patch.yml`:
     provider: deepseek     # optional — pin the provider (defaults to the deployment model)
     model: deepseek-chat   # optional — pin the model
     reasoningEffort: off   # 'off' (default) disables thinking; 'high'/'max'/'default' passthrough
+    registryUrl: https://registry.npmjs.org  # optional — npm registry base for update checks (default npmjs.org)
 ```
 
 ## Structure
@@ -77,7 +79,8 @@ src/
 ├── host/                     # Node half
 │   ├── index.ts              # git/* RPC endpoints (loopback-only)
 │   ├── git.ts                # ctx.shell wrapper; paths/messages via stdin (no shell injection)
-│   └── commit-message.ts     # diff truncation + ctx.llm.stream generation
+│   ├── commit-message.ts     # diff truncation + ctx.llm.stream generation
+│   └── update.ts             # self-update: npm version check + dsh plugin update runner
 └── client/                   # browser half
     ├── index.tsx             # slot registration + RPC + locale dictionary
     ├── GitPanel.tsx          # source-control panel UI
