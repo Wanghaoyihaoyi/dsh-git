@@ -25,6 +25,10 @@ export interface GraphRow {
   commit?: GitLogCommit
   /** Column of the commit dot on commit rows. */
   col?: number
+  /** Rightmost live lane crossing this row (counting lanes this commit forks
+   *  off, which exist from this row downward). The commit text hugs this lane
+   *  so unrelated branches to the right never push it away. */
+  textCol?: number
 }
 
 interface Lane {
@@ -103,6 +107,15 @@ function placeLaneAt(cursor: GraphCursor, lane: Lane, targetCol: number): number
   return placeLane(cursor, lane)
 }
 
+/** Highest column still holding a live lane (a commit's text hugs this one). */
+function rightmostLane(cursor: GraphCursor, fallback: number): number {
+  let col = fallback
+  for (let i = 0; i < cursor.lanes.length; i++) {
+    if (cursor.lanes[i] !== null && i > col) col = i
+  }
+  return col
+}
+
 /**
  * Stream `commits` (newest → oldest) through the cursor, returning their rows.
  * Callers keep the cursor and feed one page at a time; the returned rows are the
@@ -149,9 +162,11 @@ function appendCommit(cursor: GraphCursor, c: GitLogCommit, rows: GraphRow[], pa
     else commitCells.push({ col: i, kind: 'vline', color: l.color })
   }
   rows.push({ cells: commitCells, commit: c, col: colC })
+  const commitRow = rows.length - 1
 
   if (parents.length === 0) {
     // Root: the lane terminates here.
+    rows[commitRow].textCol = rightmostLane(cursor, colC)
     freeColor(cursor, laneC)
     cursor.lanes[colC] = null
     cursor.commitLane.delete(c.hash)
@@ -162,18 +177,18 @@ function appendCommit(cursor: GraphCursor, c: GitLogCommit, rows: GraphRow[], pa
   // history stays a straight line; other parents open a new lane or merge into
   // an already-reserved lane (the "two branches meet" case). `isNew` marks a
   // freshly-opened lane (a fork) vs. a merge into an existing lane.
-  const plans: Array<{ parent: string; lane: Lane; col: number; isNew: boolean }> = []
+  const plans: Array<{ parent: string; lane: Lane; col: number; isNew: boolean; idx: number }> = []
   for (let i = 0; i < parents.length; i++) {
     const p = parents[i]
     const pid = cursor.commitLane.get(p)
     const pidx = pid === undefined ? -1 : cursor.lanes.findIndex((l) => l !== null && l.id === pid)
     if (pidx >= 0) {
-      plans.push({ parent: p, lane: cursor.lanes[pidx] as Lane, col: pidx, isNew: false })
+      plans.push({ parent: p, lane: cursor.lanes[pidx] as Lane, col: pidx, isNew: false, idx: i })
       continue
     }
     if (i === 0) {
       cursor.commitLane.set(p, laneC.id)
-      plans.push({ parent: p, lane: laneC, col: colC, isNew: false })
+      plans.push({ parent: p, lane: laneC, col: colC, isNew: false, idx: i })
     } else {
       const nl = newLane(cursor)
       // If this second parent's own parent is already reserved, the branch will
@@ -184,26 +199,45 @@ function appendCommit(cursor: GraphCursor, c: GitLogCommit, rows: GraphRow[], pa
       const crossesBack = pParents === undefined || pParents.some((gp) => cursor.commitLane.has(gp))
       const newCol = crossesBack ? placeLaneAt(cursor, nl, colC + 2) : placeLane(cursor, nl)
       cursor.commitLane.set(p, nl.id)
-      plans.push({ parent: p, lane: nl, col: newCol, isNew: true })
+      plans.push({ parent: p, lane: nl, col: newCol, isNew: true, idx: i })
     }
   }
+
+  // The commit's text hugs the rightmost lane that crosses this row, counting
+  // lanes this commit just forked off (they exist from this row downward).
+  rows[commitRow].textCol = rightmostLane(cursor, colC)
 
   // c's lane survives only if the first parent inherited it (linear history).
   const cLaneContinues = plans.some((pl) => pl.lane.id === laneC.id)
 
+  // Landing column of each fork (newly-opened lane), keyed by its plan order.
+  // A fork's lane exists only after it lands, so earlier bend rows must not draw
+  // its vertical pass-through yet — otherwise a stub appears beside the trunk.
+  const forkOrderByCol = new Map<number, number>() // column -> plan order
+  for (const pl of plans) if (pl.isNew) forkOrderByCol.set(pl.col, pl.idx)
+
   // One bend row per parent that lands on a different column. Every OTHER lane
-  // keeps a vertical pass-through; c's own column only keeps one when the trunk
-  // continues — when it merges away, the lane stops so no dangling tail is left.
-  for (const pl of plans) {
-    if (pl.col === colC) continue
+  // keeps a vertical pass-through; c's own column keeps one while the trunk
+  // continues OR while a later bend still needs to peel off from it (a merge
+  // commit whose parents land on several columns), so no edge starts dangling.
+  const bends = plans.filter((pl) => pl.col !== colC)
+  for (let bi = 0; bi < bends.length; bi++) {
+    const pl = bends[bi]
+    const isLastBend = bi === bends.length - 1
     const cells: GraphCell[] = []
     for (let i = 0; i < cursor.lanes.length; i++) {
       const l = cursor.lanes[i]
       if (l === null) continue
-      if (i === colC && !cLaneContinues) continue
-      // A freshly-forked branch has no line above this bend — its lane starts
-      // where the bend lands, so skip its vertical here (no upward stub).
-      if (i === pl.col && pl.isNew) continue
+      if (i === colC) {
+        // Keep the trunk vertical unless it merges away and this is the last
+        // bend (no later edge needs an upstream on this column).
+        if (!cLaneContinues && isLastBend) continue
+      } else {
+        // A fork lane: draw its vertical only once it has landed — i.e. the fork
+        // appeared at or before this bend in parent order.
+        const forkOrder = forkOrderByCol.get(i)
+        if (forkOrder !== undefined && forkOrder >= pl.idx) continue
+      }
       cells.push({ col: i, kind: 'vline', color: l.color })
     }
     // The bend belongs to the forked/merged branch: a fork, or a merge-commit's

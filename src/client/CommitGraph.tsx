@@ -499,14 +499,10 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
                 const commit = row.commit
                 const fullHeight = rowHeight(row, expanded, details)
                 const isExpanded = commit !== undefined && expanded.has(commit.hash)
-                // Right-most column this row actually draws, so the text hugs the
-                // line instead of clearing the whole (global) graph width.
-                let rowRight = 0
-                for (const cell of row.cells) {
-                  const c = cell.kind === 'edge' ? Math.max(cell.col, cell.toCol) : cell.col
-                  if (c > rowRight) rowRight = c
-                }
-                const textLeft = (rowRight + 1) * laneW + GRAPH_RIGHT_GAP
+                // Text hugs the rightmost lane that crosses this row (not the
+                // commit's own column), so a fork's two messages stay adjacent
+                // instead of being spread apart by the branch count.
+                const textLeft = ((row.textCol ?? row.col ?? 0) + 1) * laneW + GRAPH_RIGHT_GAP
                 const graphHeight = commit !== undefined ? fullHeight : EDGE_H
                 return (
                   <div key={rowKeys[i]} style={{ position: 'absolute', top: offsets[i], left: 0, right: 0, height: fullHeight }}>
