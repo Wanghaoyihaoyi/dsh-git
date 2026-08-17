@@ -7,11 +7,13 @@
 // proxy failure reports `hasUpdate: false` plus an `error`, so the client can
 // stay silent instead of surfacing a transient warning.
 //
-// Update — runs `dsh plugin --profile <name> add @mojiexuan/dsh-git@latest`
+// Update — runs `dsh plugin --profile <name> add @mojiexuan/dsh-git@<version>`
 // under `danger-full-access` (it writes `$DSH_HOME/profiles/...` and needs the
-// network). `add <pkg>@latest` — rather than `update` — is what reliably bumps
-// the installed version across a minor/major range, since pnpm saves a caret
-// range (`^0.2.0`) on install and a plain `update` would stay inside it.
+// network). `add <pkg>@<version>` — rather than `update` — reliably bumps the
+// installed version across a minor/major range, since pnpm saves a caret range
+// (`^0.2.0`) on install and a plain `update` would stay inside it. The exact
+// version is pinned (not `@latest`) so a stale pnpm metadata cache cannot
+// resolve the update backwards.
 //
 // The profile name is derived from this module's own install path
 // (`.../profiles/<name>/node_modules/@mojiexuan/dsh-git/lib/index.js`); for a
@@ -176,7 +178,10 @@ export async function updatePlugin(
   }
   const result = await runDsh(
     shell,
-    ['plugin', '--profile', profile.name, 'add', `${PACKAGE_NAME}@latest`],
+    // Pin the exact version we just resolved, not `@latest`: pnpm's registry
+    // metadata cache can lag a fresh publish and resolve `latest` to an older
+    // version, which would "update" us backwards.
+    ['plugin', '--profile', profile.name, 'add', `${PACKAGE_NAME}@${latest}`],
     profile.dir,
     signal,
   )
