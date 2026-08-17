@@ -1,6 +1,6 @@
-// Commit-history graph, docked at the bottom of the git panel. Collapsed to a
-// single header bar by default; expanding it splits the vertical space evenly
-// with the file list.
+// Commit-history graph, docked at the bottom of the git panel. Expanded by
+// default, splitting the vertical space evenly with the file list; collapsing
+// it leaves a single header bar.
 //
 // The host returns paged raw topology (no `--graph`); this component owns lane
 // drawing via `graph.ts`, so it can page lazily — scrolling near the bottom
@@ -154,7 +154,7 @@ function FilesBlock({ state, t }: { state: DetailState | undefined; t: Translate
 }
 
 export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const [rows, setRows] = useState<GraphRow[]>([])
   const [maxCol, setMaxCol] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -192,10 +192,11 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
     setDetails(new Map())
   }, [])
 
-  // The workspace changed: drop the stale graph and collapse.
+  // Expanded by default. When the workspace changes, drop the stale graph and
+  // stay expanded; the load effect below refills the first page once rows clear.
   useEffect(() => {
     reset()
-    setOpen(false)
+    setOpen(true)
   }, [cwd, reset])
 
   const loadNextPage = useCallback(async () => {
@@ -223,6 +224,12 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
       setLoadingMore(false)
     }
   }, [git, cwd, onError])
+
+  // Load the first page whenever the graph is open but empty — initial mount,
+  // after a workspace change, and on manual re-open.
+  useEffect(() => {
+    if (open && rows.length === 0) void loadNextPage()
+  }, [open, rows.length, loadNextPage])
 
   // Auto-refresh while expanded: fingerprint the newest page by hash + refs, so
   // ANY change — a new commit, or a ref moving onto/off any commit in that page
