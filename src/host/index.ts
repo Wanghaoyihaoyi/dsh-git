@@ -157,6 +157,11 @@ async function dispatch(
       const url = readUrl(payload)
       return gitRemoteAdd(ctx, cwd, name, url, signal)
     }
+    case GIT_RPC.remoteSetUrl: {
+      const name = readName(payload)
+      const url = readUrl(payload)
+      return gitRemoteSetUrl(ctx, cwd, name, url, signal)
+    }
     case GIT_RPC.remoteRemove: {
       const name = readName(payload)
       return gitRemoteRemove(ctx, cwd, name, signal)
@@ -538,6 +543,16 @@ async function gitRemoteAdd(ctx: Context, cwd: string, name: string, url: string
   await gitOrThrow(
     ctx.shell,
     ['remote', 'add', assertSafe(name, SAFE_REMOTE, 'remote name'), assertSafe(url, SAFE_URL, 'remote url')],
+    { cwd, signal },
+  )
+  return gitStatus(ctx, cwd, signal)
+}
+
+/** Retarget an existing remote — the common URL-change case. */
+async function gitRemoteSetUrl(ctx: Context, cwd: string, name: string, url: string, signal: AbortSignal): Promise<GitStatus> {
+  await gitOrThrow(
+    ctx.shell,
+    ['remote', 'set-url', assertSafe(name, SAFE_REMOTE, 'remote name'), assertSafe(url, SAFE_URL, 'remote url')],
     { cwd, signal },
   )
   return gitStatus(ctx, cwd, signal)

@@ -13,6 +13,8 @@ export type GitKey =
   | 'remoteMenu'
   | 'remoteDetails'
   | 'copyRemoteUrl'
+  | 'editRemoteUrl'
+  | 'save'
   | 'createRemote'
   | 'noWorkspace'
   | 'notRepo'
@@ -83,6 +85,8 @@ export const gitZh: LocaleDictOf<'git'> = {
   remoteMenu: '远程仓库管理',
   remoteDetails: '远程：{name}',
   copyRemoteUrl: '复制远程地址',
+  editRemoteUrl: '修改远程地址 {name}',
+  save: '保存',
   createRemote: '创建远程仓库',
   noWorkspace: '暂无工作区',
   notRepo: '非 Git 仓库',
@@ -148,6 +152,8 @@ export const gitEn: LocaleDictOf<'git'> = {
   remoteMenu: 'Remote management',
   remoteDetails: 'Remote: {name}',
   copyRemoteUrl: 'Copy remote URL',
+  editRemoteUrl: 'Edit remote URL {name}',
+  save: 'Save',
   createRemote: 'Create remote repository',
   noWorkspace: 'No workspace',
   notRepo: 'Not a git repository',

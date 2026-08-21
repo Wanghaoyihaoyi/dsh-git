@@ -101,6 +101,8 @@ export const PANEL_CSS = `
 .dshgit-rmenu-copy:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .dshgit-rmenu-copied{font-size:12px;color:var(--dsw-alias-state-business-primary)}
 .dshgit-rmenu-divider{height:1px;background:var(--dsw-alias-border-l2);margin:2px 0}
+.dshgit-rmenu-item{display:flex;align-items:center;gap:6px;width:100%;box-sizing:border-box;border:none;background:transparent;color:var(--dsw-alias-label-primary);cursor:pointer;padding:8px 10px;font-size:13px;font-family:inherit;text-align:left}
+.dshgit-rmenu-item:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .dshgit-rmenu-danger{display:flex;align-items:center;gap:6px;width:100%;box-sizing:border-box;border:none;background:transparent;color:var(--dsw-alias-state-error-primary);cursor:pointer;padding:8px 10px;font-size:13px;font-family:inherit;text-align:left}
 .dshgit-rmenu-danger:hover{background:var(--dsw-alias-interactive-bg-hover-danger)}
 .dshgit-modal-input{width:100%;height:36px;box-sizing:border-box;margin:0;padding:0 10px;border:1px solid var(--dsw-alias-border-l3);border-radius:8px;outline:none;background:transparent;color:var(--dsw-alias-label-primary);font-size:14px;font-family:inherit}

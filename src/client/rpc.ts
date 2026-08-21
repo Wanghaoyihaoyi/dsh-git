@@ -36,6 +36,7 @@ export interface GitApi {
   generateMessagePoll(requestId: string, signal?: AbortSignal): Promise<GenerateMessagePollResponse>
   remotes(cwd: string, signal?: AbortSignal): Promise<GitRemote[]>
   remoteAdd(cwd: string, name: string, url: string, signal?: AbortSignal): Promise<GitStatus>
+  remoteSetUrl(cwd: string, name: string, url: string, signal?: AbortSignal): Promise<GitStatus>
   remoteRemove(cwd: string, name: string, signal?: AbortSignal): Promise<GitStatus>
   branches(cwd: string, signal?: AbortSignal): Promise<GitBranch[]>
   branchCreate(cwd: string, name: string, signal?: AbortSignal): Promise<GitBranch[]>
@@ -78,6 +79,7 @@ export function createGitApi(call: Caller): GitApi {
     generateMessagePoll: (requestId, signal) => unwrap(call, GIT_RPC.generateMessagePoll, { requestId }, signal),
     remotes: (cwd, signal) => unwrap(call, GIT_RPC.remotes, { cwd }, signal),
     remoteAdd: (cwd, name, url, signal) => unwrap(call, GIT_RPC.remoteAdd, { cwd, name, url }, signal),
+    remoteSetUrl: (cwd, name, url, signal) => unwrap(call, GIT_RPC.remoteSetUrl, { cwd, name, url }, signal),
     remoteRemove: (cwd, name, signal) => unwrap(call, GIT_RPC.remoteRemove, { cwd, name }, signal),
     branches: (cwd, signal) => unwrap(call, GIT_RPC.branches, { cwd }, signal),
     branchCreate: (cwd, name, signal) => unwrap(call, GIT_RPC.branchCreate, { cwd, name }, signal),

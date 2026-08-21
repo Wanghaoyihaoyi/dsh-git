@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Button, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { GlobalStandardProps, TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
-import type { GitBranch, GitStatus } from '../shared/rpc.js'
+import type { GitBranch, GitRemote, GitStatus } from '../shared/rpc.js'
 import type { GitApi } from './rpc.js'
 import { panelStore } from './panelStore.js'
 import { useIsNarrow } from './useIsNarrow.js'
@@ -72,6 +72,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const [branchMenuOpen, setBranchMenuOpen] = useState(false)
   const [remoteMenuOpen, setRemoteMenuOpen] = useState(false)
   const [remoteModalOpen, setRemoteModalOpen] = useState(false)
+  const [editUrlTarget, setEditUrlTarget] = useState<GitRemote | null>(null)
   const [remoteUrl, setRemoteUrl] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<{ kind: 'branch' | 'remote'; name: string } | null>(null)
   const branchAnchorRef = useRef<HTMLButtonElement>(null)
@@ -269,6 +270,21 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
       setBusy(null)
     }
   }, [git, cwd, busy, remoteUrl, t])
+
+  const handleEditRemote = useCallback(async () => {
+    if (!cwd || busy || editUrlTarget === null) return
+    setBusy(t('editRemoteUrl', { name: editUrlTarget.name }))
+    setError(null)
+    try {
+      setStatus(await git.remoteSetUrl(cwd, editUrlTarget.name, remoteUrl))
+      setEditUrlTarget(null)
+      setRemoteUrl('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(null)
+    }
+  }, [git, cwd, busy, editUrlTarget, remoteUrl, t])
 
   const handlePull = useCallback(async () => {
     if (!cwd || busy) return
@@ -661,6 +677,12 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
         url={remote?.url ?? ''}
         anchor={remoteMenuOpen ? remoteAnchorRef.current : null}
         onClose={() => setRemoteMenuOpen(false)}
+        onEditUrl={() => {
+          if (remote) {
+            setEditUrlTarget(remote)
+            setRemoteUrl(remote.url)
+          }
+        }}
         onDelete={() => setDeleteTarget({ kind: 'remote', name: remote?.name ?? '' })}
         t={t}
       />
@@ -697,6 +719,31 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
           onChange={(event) => setRemoteUrl(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && remoteUrl.trim().length > 0) void handleAddRemote()
+          }}
+        />
+      </Modal>
+
+      <Modal
+        open={editUrlTarget !== null}
+        onClose={() => setEditUrlTarget(null)}
+        title={editUrlTarget !== null ? t('editRemoteUrl', { name: editUrlTarget.name }) : ''}
+        closeLabel={t('close')}
+        footer={
+          <>
+            <Button variant="ghost" size="md" onClick={() => setEditUrlTarget(null)}>{t('cancel')}</Button>
+            <Button variant="primary" size="md" disabled={busy !== null || remoteUrl.trim().length === 0} onClick={() => void handleEditRemote()}>{t('save')}</Button>
+          </>
+        }
+      >
+        <input
+          className="dshgit-modal-input"
+          value={remoteUrl}
+          placeholder={t('remoteUrlPlaceholder')}
+          spellCheck={false}
+          autoFocus
+          onChange={(event) => setRemoteUrl(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && remoteUrl.trim().length > 0) void handleEditRemote()
           }}
         />
       </Modal>

@@ -13,11 +13,12 @@ export interface RemoteMenuProps {
   url: string
   anchor: HTMLElement | null
   onClose: () => void
+  onEditUrl: () => void
   onDelete: () => void
   t: TranslateNS<'git'>
 }
 
-export function RemoteMenu({ name, url, anchor, onClose, onDelete, t }: RemoteMenuProps) {
+export function RemoteMenu({ name, url, anchor, onClose, onEditUrl, onDelete, t }: RemoteMenuProps) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
   const [copied, setCopied] = useState(false)
   const copiedTimer = useRef<number | undefined>(undefined)
@@ -79,6 +80,16 @@ export function RemoteMenu({ name, url, anchor, onClose, onDelete, t }: RemoteMe
               {copied ? <span className="dshgit-rmenu-copied">{t('copied')}</span> : <CopyIcon size={14} />}
             </button>
           </div>
+          <button
+            type="button"
+            className="dshgit-rmenu-item"
+            onClick={() => {
+              onClose()
+              onEditUrl()
+            }}
+          >
+            {t('editRemoteUrl', { name })}
+          </button>
           <div className="dshgit-rmenu-divider" />
           <button
             type="button"

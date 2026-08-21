@@ -30,6 +30,7 @@ export const GIT_RPC = {
   fsList: 'git/fsList',
   fsRead: 'git/fsRead',
   diff: 'git/diff',
+  remoteSetUrl: 'git/remoteSetUrl',
 } as const
 
 export type GitEndpoint = (typeof GIT_RPC)[keyof typeof GIT_RPC]
@@ -139,6 +140,12 @@ export interface CommitRequest extends GitRpcRequest {
 }
 
 export interface RemoteAddRequest extends GitRpcRequest {
+  name: string
+  url: string
+}
+
+/** Retarget an existing remote (git remote set-url) — the common case. */
+export interface RemoteSetUrlRequest extends GitRpcRequest {
   name: string
   url: string
 }
