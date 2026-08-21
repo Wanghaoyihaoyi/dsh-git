@@ -57,6 +57,18 @@ function refLabel(ref: string): string {
   return ref
 }
 
+/** Classifier so each ref badge gets its own tint (branch/tag/remote/HEAD). */
+function refKind(ref: string): 'head' | 'tag' | 'remote' | 'branch' {
+  if (ref === 'HEAD' || ref.startsWith('HEAD -> ')) return 'head'
+  if (ref.startsWith('tag: ')) return 'tag'
+  if (ref.startsWith('HEAD -> ') === false) {
+    const name = refLabel(ref)
+    if (name.includes('/') && !name.endsWith('/HEAD')) return 'remote'
+    if (name.endsWith('/HEAD')) return 'remote'
+  }
+  return 'branch'
+}
+
 function basename(path: string): string {
   return path.split('/').pop() ?? path
 }
@@ -519,7 +531,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
                         {commit.refs.map((ref) => (
                           <span
                             key={ref}
-                            className={`dshgit-log-ref${isCurrentRef(ref) ? ' dshgit-log-ref-current' : ''}${ref.startsWith('tag:') ? ' dshgit-log-ref-tag' : ''}`}
+                            className={`dshgit-log-ref dshgit-log-ref-${refKind(ref)}${isCurrentRef(ref) ? ' dshgit-log-ref-current' : ''}`}
                           >
                             {refLabel(ref)}
                           </span>

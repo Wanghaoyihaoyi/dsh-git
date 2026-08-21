@@ -55,6 +55,11 @@ export type GitKey =
   | 'updateNow'
   | 'updating'
   | 'updateDone'
+  | 'files'
+  | 'fsEmpty'
+  | 'fsBinary'
+  | 'fsTooLarge'
+  | 'fsTruncated'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -112,6 +117,11 @@ export const gitZh: LocaleDictOf<'git'> = {
   updateNow: '点击立即更新',
   updating: '更新中…',
   updateDone: '已更新到 v{version}，请完全重启 dsh web 并刷新浏览器以生效',
+  files: '工作区文件',
+  fsEmpty: '空目录',
+  fsBinary: '二进制文件，暂不支持预览',
+  fsTooLarge: '文件过大，暂不预览',
+  fsTruncated: '目录条目过多，已截断显示',
 }
 
 export const gitEn: LocaleDictOf<'git'> = {
@@ -164,4 +174,9 @@ export const gitEn: LocaleDictOf<'git'> = {
   updateNow: 'Click to update',
   updating: 'Updating…',
   updateDone: 'Updated to v{version}. Fully restart dsh web and refresh the browser to apply.',
+  files: 'Workspace files',
+  fsEmpty: 'Empty directory',
+  fsBinary: 'Binary file; preview unavailable',
+  fsTooLarge: 'File too large to preview',
+  fsTruncated: 'Too many entries; listing truncated',
 }

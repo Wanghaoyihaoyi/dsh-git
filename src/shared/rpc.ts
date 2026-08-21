@@ -27,6 +27,8 @@ export const GIT_RPC = {
   branchDelete: 'git/branchDelete',
   checkUpdate: 'git/checkUpdate',
   update: 'git/update',
+  fsList: 'git/fsList',
+  fsRead: 'git/fsRead',
 } as const
 
 export type GitEndpoint = (typeof GIT_RPC)[keyof typeof GIT_RPC]
@@ -176,4 +178,47 @@ export interface GitUpdateResult {
   updated: true
   /** Version now on disk (takes effect after a full restart + browser refresh). */
   version: string
+}
+
+/** One directory entry in the workspace file tree. */
+export interface FsEntry {
+  /** Entry name (basename). */
+  name: string
+  /** Repository-relative path (cwd = the requested working directory). */
+  path: string
+  kind: 'dir' | 'file'
+  /** Size in bytes; absent for directories. */
+  size?: number
+  /** Modified time (ISO-8601); absent for directories. */
+  mtime?: string
+}
+
+/** One page of a directory listing (`path` is relative to cwd; '' = root). */
+export interface FsListResult {
+  /** Directories first, then files, both name-sorted (locale-aware). */
+  entries: FsEntry[]
+  /** True when the entry count exceeded the server-side cap and was truncated. */
+  truncated: boolean
+}
+
+/** Result of reading a file for preview. */
+export interface FsReadResult {
+  /** Text content; absent when the file is binary or too large. */
+  content?: string
+  /** True when the file looks binary (NUL byte in the first chunk). */
+  binary: boolean
+  /** True when the file exceeded the size cap; content stays absent. */
+  tooLarge: boolean
+  /** Total size in bytes (exact, even when content was capped). */
+  size: number
+}
+
+export interface FsListRequest extends GitRpcRequest {
+  /** Directory to list, relative to cwd; '' lists the workspace root. */
+  path?: string
+}
+
+export interface FsReadRequest extends GitRpcRequest {
+  /** File path, relative to cwd. */
+  path: string
 }

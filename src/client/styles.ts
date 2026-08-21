@@ -98,11 +98,15 @@ export const PANEL_CSS = `
 .dshgit-log-empty{display:flex;align-items:center;justify-content:center;padding:16px;color:var(--dsw-alias-label-secondary);font-size:13px}
 .dshgit-log-graph{flex:none;display:block;overflow:visible}
 .dshgit-log-dot{fill:var(--dsw-alias-state-business-primary)}
-.dshgit-log-commit{min-width:0;display:flex;align-items:center;gap:4px;border:none;background:transparent;cursor:pointer;padding:0 10px 0 0;font-family:inherit;text-align:left;box-sizing:border-box}
+.dshgit-log-commit{min-width:0;display:flex;align-items:center;gap:4px;border:none;background:transparent;cursor:pointer;padding:0 10px 0 0;font-family:inherit;text-align:left;box-sizing:border-box;border-radius:4px}
+.dshgit-log-commit:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .dshgit-log-commit:hover .dshgit-log-subject{color:var(--dsw-alias-state-business-primary)}
 .dshgit-log-ref{flex:none;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px;border-radius:4px;font-size:11px;line-height:16px;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
 .dshgit-log-ref-current{color:var(--dsw-alias-state-business-primary);font-weight:500}
-.dshgit-log-ref-tag{color:var(--dsw-alias-label-primary)}
+.dshgit-log-ref-branch{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
+.dshgit-log-ref-tag{color:#8a63d2;background:rgba(138,99,210,.12)}
+.dshgit-log-ref-remote{color:#0078d4;background:rgba(0,120,212,.10)}
+.dshgit-log-ref-head{color:var(--dsw-alias-state-business-primary);background:var(--dsw-alias-interactive-bg-active);font-weight:500}
 .dshgit-log-subject{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-primary);font-size:13px}
 .dshgit-log-files{padding:4px 0}
 .dshgit-log-file{display:flex;align-items:center;gap:8px;height:22px;box-sizing:border-box;padding:0 10px 0 0}
@@ -116,8 +120,8 @@ export const PANEL_CSS = `
 .dshgit-file-status-C{color:#4a86c8;background:rgba(74,134,200,.15)}
 .dshgit-file-status-T{color:#8a63d2;background:rgba(138,99,210,.15)}
 .dshgit-hover{position:fixed;z-index:1002;max-width:360px;max-height:60vh;overflow-y:auto;box-sizing:border-box;background:var(--dsw-specific-menu,var(--dsw-alias-bg-base));color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l3);border-radius:10px;box-shadow:var(--dsw-shadow-lv3,0 8px 24px rgba(0,0,0,.18));padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
-.dshgit-hover-message{white-space:pre-wrap;word-break:break-word;line-height:20px}
-.dshgit-hover-meta{display:flex;flex-direction:column;gap:4px;color:var(--dsw-alias-label-primary)}
+.dshgit-hover-message{white-space:pre-wrap;word-break:break-word;line-height:20px;padding-bottom:8px;border-bottom:1px solid var(--dsw-alias-border-l2)}
+.dshgit-hover-meta{display:flex;flex-direction:column;gap:4px;color:var(--dsw-alias-label-primary);padding-top:8px}
 .dshgit-hover-label{display:inline-block;width:40px;color:var(--dsw-alias-label-secondary)}
 .dshgit-hover-hash{display:flex;align-items:center;gap:8px}
 .dshgit-hover-hash-value{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--dsw-alias-label-secondary)}
@@ -131,4 +135,29 @@ export const PANEL_CSS = `
 .dshgit-update-link:hover{text-decoration:underline}
 .dshgit-update-link:disabled{opacity:.6;cursor:default}
 .dshgit-notice{flex:none;padding:8px 12px;border-top:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-state-business-primary);background:var(--dsw-alias-interactive-bg-hover);font-size:13px;line-height:18px;word-break:break-all}
+.dshgit-fs{flex:none;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.dshgit-fs-tree{max-height:220px;overflow-y:auto;border-top:1px solid var(--dsw-alias-border-l2)}
+.dshgit-fs-tree::-webkit-scrollbar{width:8px}
+.dshgit-fs-tree::-webkit-scrollbar-thumb{background:var(--dsw-alias-scrollbar-bg-l2);border-radius:4px}
+.dshgit-fs-tree::-webkit-scrollbar-thumb:hover{background:var(--dsw-alias-scrollbar-hover-l2)}
+.dshgit-fs-dir-row{display:flex;align-items:center;gap:6px;width:100%;min-width:0;box-sizing:border-box;border:none;background:transparent;color:var(--dsw-alias-label-primary);cursor:pointer;font-family:inherit;font-size:13px;text-align:left;padding-top:5px;padding-bottom:5px}
+.dshgit-fs-dir-row:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.dshgit-fs-caret{flex:none;width:10px;font-size:10px;color:var(--dsw-alias-label-secondary);text-align:center}
+.dshgit-fs-diricon{flex:none;font-size:12px}
+.dshgit-fs-file{display:flex;align-items:center;gap:6px;width:100%;min-width:0;box-sizing:border-box;border:none;background:transparent;color:var(--dsw-alias-label-primary);cursor:pointer;font-family:inherit;font-size:13px;text-align:left;padding-top:5px;padding-bottom:5px}
+.dshgit-fs-file:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.dshgit-fs-file-selected{background:var(--dsw-alias-interactive-bg-active)}
+.dshgit-fs-fileicon{flex:none;display:inline-flex;align-items:center;font-size:12px}
+.dshgit-fs-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.dshgit-fs-size{flex:none;color:var(--dsw-alias-label-secondary);font-size:11px}
+.dshgit-fs-note{padding:6px 10px;color:var(--dsw-alias-label-secondary);font-size:12px}
+.dshgit-fs-error{color:var(--dsw-alias-state-error-primary)}
+.dshgit-fs-preview{border-top:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;min-height:0}
+.dshgit-fs-preview-head{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--dsw-alias-border-l2)}
+.dshgit-fs-preview-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500}
+.dshgit-fs-preview-meta{flex:none;color:var(--dsw-alias-label-secondary);font-size:11px}
+.dshgit-fs-preview-body{max-height:220px;overflow:auto;background:var(--dsw-alias-bg-base)}
+.dshgit-fs-preview-body::-webkit-scrollbar{width:8px}
+.dshgit-fs-preview-body::-webkit-scrollbar-thumb{background:var(--dsw-alias-scrollbar-bg-l2);border-radius:4px}
+.dshgit-fs-pre{margin:0;padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;color:var(--dsw-alias-label-primary);white-space:pre;word-break:normal}
 `

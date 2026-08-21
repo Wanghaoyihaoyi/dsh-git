@@ -14,7 +14,8 @@ A VS Code–like **Git Source Control panel** for the [DeepSeek Harness](https:/
 - **Branch management** — list / switch / create / delete (with confirmation).
 - **Remote management** — show / add / remove the origin remote (with confirmation).
 - **AI commit messages** — streaming, Conventional Commits, generated from the staged/working diff via the harness LLM (Chinese output by default).
-- **Commit-history graph** — a lazily-paged SVG lane graph of all branches + remotes (lane topology computed client-side, rounded bends, soft palette), expanded by default at the bottom of the panel to half the panel height, virtual-scrolls and loads the next page as you scroll, expands a commit inline to its changed files, and shows a hover popover with message / author / date / hash (full hash copyable).
+- **Commit-history graph** — a lazily-paged SVG lane graph of all branches + remotes (lane topology computed client-side, rounded bends, soft palette), expanded by default at the bottom of the panel to half the panel height, virtual-scrolls and loads the next page as you scroll, expands a commit inline to its changed files, and shows a hover popover with message / author / date / hash (full hash copyable). Commit refs are tinted per kind: branch / tag / remote / HEAD.
+- **Workspace file browser** — below the change lists, a lazy directory tree (`.git` and `node_modules` hidden) that previews text files on click, with explicit notices for binary and oversized files; path validation is strictly confined to the workspace root.
 - **Auto-refresh** — polls `git status` every 2.5 s so edits, commits and pushes made outside the panel show up.
 - **Self-update** — on first open the panel silently checks the npm registry for a newer version; when one exists, an update badge appears on the sidebar entry and a one-click "update now" link shows in the panel header, followed by a restart prompt.
 - **i18n** — English and Chinese UI.

@@ -5,6 +5,8 @@
 import type { RpcResult } from '@deepseek-ai/dsh-host-apiproxy/api'
 import {
   GIT_RPC,
+  type FsListResult,
+  type FsReadResult,
   type GitBranch,
   type GitCommitDetail,
   type GitLogPage,
@@ -40,6 +42,8 @@ export interface GitApi {
   branchDelete(cwd: string, name: string, signal?: AbortSignal): Promise<GitBranch[]>
   checkUpdate(signal?: AbortSignal): Promise<GitUpdateInfo>
   update(signal?: AbortSignal): Promise<GitUpdateResult>
+  fsList(cwd: string, path?: string, signal?: AbortSignal): Promise<FsListResult>
+  fsRead(cwd: string, path: string, signal?: AbortSignal): Promise<FsReadResult>
 }
 
 type Caller = (
@@ -79,5 +83,7 @@ export function createGitApi(call: Caller): GitApi {
     branchDelete: (cwd, name, signal) => unwrap(call, GIT_RPC.branchDelete, { cwd, name }, signal),
     checkUpdate: (signal) => unwrap(call, GIT_RPC.checkUpdate, {}, signal),
     update: (signal) => unwrap(call, GIT_RPC.update, {}, signal),
+    fsList: (cwd, path, signal) => unwrap(call, GIT_RPC.fsList, { cwd, path }, signal),
+    fsRead: (cwd, path, signal) => unwrap(call, GIT_RPC.fsRead, { cwd, path }, signal),
   }
 }

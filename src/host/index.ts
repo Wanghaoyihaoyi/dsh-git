@@ -24,6 +24,7 @@ import {
 import { assertSafe, git, gitOrThrow, SAFE_BRANCH, SAFE_HASH, SAFE_REMOTE, SAFE_URL, stdoutText } from './git.js'
 import { generateCommitMessage } from './commit-message.js'
 import { checkUpdateCached, updatePlugin } from './update.js'
+import { fsList, fsRead } from './fs.js'
 
 export const name = 'dsh-git'
 export const inject = ['shell', 'llm', 'connection', 'agentDefaultModel']
@@ -173,6 +174,14 @@ async function dispatch(
       const name = readName(payload)
       return gitBranchDelete(ctx, cwd, name, signal)
     }
+    case GIT_RPC.fsList: {
+      const rel = readRelPath(payload)
+      return fsList(cwd, rel, signal)
+    }
+    case GIT_RPC.fsRead: {
+      const rel = readRelPath(payload)
+      return fsRead(cwd, rel, signal)
+    }
     case GIT_RPC.generateMessageStart:
       return gitGenerateStart(ctx, cwd, config)
     default:
@@ -185,6 +194,14 @@ function readPath(payload: unknown): string {
   if (typeof path !== 'string' || path.trim().length === 0) {
     throw new Error('path is required')
   }
+  return path
+}
+
+/** Relative workspace path; '' is allowed (the root). */
+function readRelPath(payload: unknown): string {
+  const path = (payload as { path?: unknown } | null | undefined)?.path
+  if (path === undefined) return ''
+  if (typeof path !== 'string') throw new Error('path must be a string')
   return path
 }
 

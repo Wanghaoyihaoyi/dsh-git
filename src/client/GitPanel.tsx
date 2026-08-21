@@ -12,6 +12,7 @@ import { panelStore } from './panelStore.js'
 import { useIsNarrow } from './useIsNarrow.js'
 import { BranchMenu } from './BranchMenu.js'
 import { CommitGraph } from './CommitGraph.js'
+import { FileBrowser } from './FileBrowser.js'
 import { fileIcon } from './fileIcons.js'
 import {
   GitIcon,
@@ -586,6 +587,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               ) : null}
             </div>
             </div>
+            <FileBrowser git={git} cwd={cwd} t={t} />
             <CommitGraph git={git} cwd={cwd} onError={setError} t={t} />
           </div>
         )}
