@@ -164,6 +164,8 @@ export const PANEL_CSS = `
 .dshgit-fs-preview-head{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--dsw-alias-border-l2)}
 .dshgit-fs-preview-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500}
 .dshgit-fs-preview-meta{flex:none;color:var(--dsw-alias-label-secondary);font-size:11px}
+.dshgit-fs-preview-close{flex:none;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;padding:0;border-radius:5px;font-size:13px;line-height:1}
+.dshgit-fs-preview-close:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .dshgit-fs-preview-body{max-height:220px;overflow:auto;background:var(--dsw-alias-bg-base)}
 .dshgit-fs-preview-body::-webkit-scrollbar{width:8px}
 .dshgit-fs-preview-body::-webkit-scrollbar-thumb{background:var(--dsw-alias-scrollbar-bg-l2);border-radius:4px}

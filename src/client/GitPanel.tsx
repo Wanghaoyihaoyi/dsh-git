@@ -61,8 +61,9 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [stagedOpen, setStagedOpen] = useState(true)
-  const [unstagedOpen, setUnstagedOpen] = useState(true)
+  // Collapsed by default: an empty list shows nothing, not a tall empty box.
+  const [stagedOpen, setStagedOpen] = useState(false)
+  const [unstagedOpen, setUnstagedOpen] = useState(false)
   const [view, setView] = useState<'git' | 'files'>('git')
   const [branches, setBranches] = useState<GitBranch[]>([])
   const [branchMenuOpen, setBranchMenuOpen] = useState(false)

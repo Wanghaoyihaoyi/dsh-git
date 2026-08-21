@@ -62,6 +62,8 @@ export type GitKey =
   | 'fsBinary'
   | 'fsTooLarge'
   | 'fsTruncated'
+  | 'fsClosePreview'
+  | 'fsOpenHint'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -126,6 +128,8 @@ export const gitZh: LocaleDictOf<'git'> = {
   fsBinary: '二进制文件，暂不支持预览',
   fsTooLarge: '文件过大，暂不预览',
   fsTruncated: '目录条目过多，已截断显示',
+  fsClosePreview: '关闭预览',
+  fsOpenHint: '双击预览',
 }
 
 export const gitEn: LocaleDictOf<'git'> = {
@@ -185,4 +189,6 @@ export const gitEn: LocaleDictOf<'git'> = {
   fsBinary: 'Binary file; preview unavailable',
   fsTooLarge: 'File too large to preview',
   fsTruncated: 'Too many entries; listing truncated',
+  fsClosePreview: 'Close preview',
+  fsOpenHint: 'Double-click to preview',
 }

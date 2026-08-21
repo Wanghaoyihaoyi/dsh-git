@@ -5,8 +5,9 @@
 // expanding one subtree never re-renders the whole tree. The host serves one
 // directory page at a time (directories first, then files, locale-aware), so
 // huge trees never materialize at once; hidden dirs (.git, node_modules) never
-// appear. Clicking a file opens its preview below the tree, with a polite
-// fallback for binary or oversized files.
+// appear. DOUBLE-clicking a file opens its preview below the tree, with a
+// polite fallback for binary or oversized files; double-clicking the same
+// file again, or the close button on the preview header, closes it.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { FsEntry, FsReadResult } from '../shared/rpc.js'
@@ -42,8 +43,21 @@ export function FileBrowser({ git, cwd, t }: FileBrowserProps) {
     setRootKey((k) => k + 1)
   }, [cwd])
 
-  const openFile = useCallback(
+  const closePreview = useCallback(() => {
+    requestSeq.current++
+    setSelected(null)
+    setPreview(null)
+    setPreviewError(null)
+    setPreviewLoading(false)
+  }, [])
+
+  const toggleFile = useCallback(
     (entry: FsEntry) => {
+      // Double-clicking the already-open file closes the preview.
+      if (selected?.path === entry.path) {
+        closePreview()
+        return
+      }
       const seq = ++requestSeq.current
       setSelected({ path: entry.path, name: entry.name, size: entry.size })
       setPreview(null)
@@ -63,7 +77,7 @@ export function FileBrowser({ git, cwd, t }: FileBrowserProps) {
           if (requestSeq.current === seq) setPreviewLoading(false)
         })
     },
-    [git, cwd],
+    [git, cwd, selected, closePreview],
   )
 
   return (
@@ -77,7 +91,7 @@ export function FileBrowser({ git, cwd, t }: FileBrowserProps) {
               name=""
               depth={0}
               defaultOpen
-              onOpenFile={openFile}
+              onOpenFile={toggleFile}
               selectedPath={selected?.path}
               t={t}
             />
@@ -87,6 +101,14 @@ export function FileBrowser({ git, cwd, t }: FileBrowserProps) {
               <div className="dshgit-fs-preview-head">
                 <span className="dshgit-fs-preview-name" title={selected.path}>{selected.name}</span>
                 <span className="dshgit-fs-preview-meta">{formatSize(selected.size) ?? ''}</span>
+                <button
+                  type="button"
+                  className="dshgit-fs-preview-close"
+                  title={t('fsClosePreview')}
+                  onClick={closePreview}
+                >
+                  <span style={{ fontSize: 13 }}>✕</span>
+                </button>
               </div>
               <div className="dshgit-fs-preview-body">
                 {previewLoading ? (
@@ -197,8 +219,8 @@ function FsDir({ git, cwd, path, name, depth, defaultOpen, onOpenFile, selectedP
                   key={entry.path}
                   className={'dshgit-fs-file' + (selectedPath === entry.path ? ' dshgit-fs-file-selected' : '')}
                   style={{ paddingLeft: 28 + depth * 14 }}
-                  onClick={() => onOpenFile(entry)}
-                  title={entry.path}
+                  onDoubleClick={() => onOpenFile(entry)}
+                  title={t('fsOpenHint') + ' · ' + entry.path}
                 >
                   <span className="dshgit-fs-fileicon">{fileIcon(entry.name)}</span>
                   <span className="dshgit-fs-name">{entry.name}</span>
