@@ -24,8 +24,18 @@ export function RemoteMenu({ name, url, anchor, onClose, onDelete, t }: RemoteMe
 
   useLayoutEffect(() => {
     if (anchor === null) return
+    // The menu is 260px wide. An anchor near the right edge (the remote pill
+    // sits at the panel's top-right) would push the menu off-viewport if we
+    // always left-align it, so clamp: prefer left edge, fall back to right
+    // alignment against the anchor's right edge (never past the viewport).
     const rect = anchor.getBoundingClientRect()
-    setPos({ top: rect.bottom + 4, left: rect.left })
+    const MENU_W = 260
+    const margin = 8
+    let left = rect.left
+    if (left + MENU_W + margin > window.innerWidth) {
+      left = Math.max(margin, rect.right - MENU_W)
+    }
+    setPos({ top: rect.bottom + 4, left })
   }, [anchor])
 
   useEffect(() => {
