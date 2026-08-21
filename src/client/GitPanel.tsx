@@ -559,7 +559,8 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                 </button>
               </div>
               {stagedOpen ? (
-                status.staged.map((file) => (
+                <div className="dshgit-group-body">
+                {status.staged.map((file) => (
                   <div className="dshgit-row" key={`staged:${file.path}`}>
                     <span className="dshgit-fileicon">{fileIcon(file.path)}</span>
                     <span className="dshgit-path" title={file.path}>{basename(file.path)}</span>
@@ -572,7 +573,8 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                       −
                     </button>
                   </div>
-                ))
+                ))}
+                </div>
               ) : null}
             </div>
 
@@ -595,7 +597,8 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                 </button>
               </div>
               {unstagedOpen ? (
-                status.unstaged.map((file) => (
+                <div className="dshgit-group-body">
+                {status.unstaged.map((file) => (
                   <div className="dshgit-row" key={`unstaged:${file.path}`}>
                     <span className="dshgit-fileicon">{fileIcon(file.path)}</span>
                     <span className="dshgit-path" title={file.path}>{basename(file.path)}</span>
@@ -608,7 +611,8 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                       +
                     </button>
                   </div>
-                ))
+                ))}
+                </div>
               ) : null}
             </div>
             </div>

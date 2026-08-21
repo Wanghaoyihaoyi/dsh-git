@@ -40,16 +40,19 @@ export const PANEL_CSS = `
 .dshgit-sparkle:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .dshgit-sparkle:disabled{opacity:.4;cursor:default}
 .dshgit-action{width:100%;border-radius:8px !important}
-.dshgit-lists{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;margin-right:-12px;padding-right:12px;gap:16px}
+.dshgit-lists{flex:0 0 auto;min-height:0;display:flex;flex-direction:column;overflow:visible;margin-right:0;padding-right:0;max-height:45%}
 .dshgit-cover{flex:1;min-height:0;overflow-y:auto}
 .dshgit-input-box:not(:first-child){margin-top:0}
 .dshgit-group{flex:none;overflow:hidden}
-.dshgit-group+ .dshgit-group{margin-top:16px}
-.dshgit-group-head{display:flex;align-items:center;gap:6px;padding:6px 4px;cursor:pointer;user-select:none;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;letter-spacing:.3px}
+.dshgit-group+ .dshgit-group{margin-top:4px}
+.dshgit-group-head{display:flex;align-items:center;gap:6px;padding:5px 4px;cursor:pointer;user-select:none;color:var(--dsw-alias-label-primary);font-size:12px;font-weight:600;letter-spacing:.3px}
 .dshgit-group-head:hover{color:var(--dsw-alias-state-business-primary)}
 .dshgit-group-head .dshgit-count{color:var(--dsw-alias-label-secondary);font-size:11px;font-weight:400;background:var(--dsw-alias-interactive-bg-hover);border-radius:8px;padding:0 6px;line-height:16px}
 .dshgit-group-head .dshgit-spacer{flex:1}
-.dshgit-row{display:flex;align-items:center;gap:8px;padding:6px 6px;border-radius:6px}
+.dshgit-group-body{display:flex;flex-direction:column;overflow-y:auto;max-height:240px;min-height:0}
+.dshgit-group-body::-webkit-scrollbar{width:8px}
+.dshgit-group-body::-webkit-scrollbar-thumb{background:var(--dsw-alias-scrollbar-bg-l2);border-radius:4px}
+.dshgit-row{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px}
 .dshgit-row+.dshgit-row{margin-top:1px}
 .dshgit-row:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .dshgit-fileicon{flex:none;display:inline-flex;align-items:center}
