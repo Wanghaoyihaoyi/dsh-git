@@ -63,6 +63,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const [error, setError] = useState<string | null>(null)
   const [stagedOpen, setStagedOpen] = useState(true)
   const [unstagedOpen, setUnstagedOpen] = useState(true)
+  const [view, setView] = useState<'git' | 'files'>('git')
   const [branches, setBranches] = useState<GitBranch[]>([])
   const [branchMenuOpen, setBranchMenuOpen] = useState(false)
   const [remoteModalOpen, setRemoteModalOpen] = useState(false)
@@ -344,6 +345,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               <span style={{ fontSize: 14 }}>✕</span>
             </button>
           </div>
+          {view === 'git' ? (
           <div className="dshgit-branch">
             {status && isRepo ? (
               <>
@@ -410,10 +412,32 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               </>
             )}
           </div>
+          ) : null}
         </header>
+
+        <div className="dshgit-tabs">
+          <button
+            type="button"
+            className={'dshgit-tab' + (view === 'git' ? ' dshgit-tab-active' : '')}
+            onClick={() => setView('git')}
+          >
+            {t('gitTab')}
+          </button>
+          <button
+            type="button"
+            className={'dshgit-tab' + (view === 'files' ? ' dshgit-tab-active' : '')}
+            onClick={() => setView('files')}
+          >
+            {t('filesTab')}
+          </button>
+        </div>
 
         {!cwd ? (
           <div className="dshgit-empty">{t('noWorkspaceOpened')}</div>
+        ) : view === 'files' ? (
+          <div className="dshgit-body dshgit-body-files">
+            <FileBrowser git={git} cwd={cwd} t={t} />
+          </div>
         ) : !status ? (
           <div className="dshgit-empty">{t('readingStatus')}</div>
         ) : !isRepo ? (
@@ -587,7 +611,6 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               ) : null}
             </div>
             </div>
-            <FileBrowser git={git} cwd={cwd} t={t} />
             <CommitGraph git={git} cwd={cwd} onError={setError} t={t} />
           </div>
         )}

@@ -1,5 +1,5 @@
 // Workspace file browser: a lazy directory tree plus a text-file preview.
-// Rendered between the change lists and the commit graph in the git panel.
+// Rendered as the panel's "files" tab (independent of git-repository state).
 //
 // Every directory node owns its own open/loading/entries state (FsDir), so
 // expanding one subtree never re-renders the whole tree. The host serves one
@@ -9,7 +9,7 @@
 // fallback for binary or oversized files.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
-import type { FsEntry, FsListResult, FsReadResult } from '../shared/rpc.js'
+import type { FsEntry, FsReadResult } from '../shared/rpc.js'
 import type { GitApi } from './rpc.js'
 import { fileIcon } from './fileIcons.js'
 
@@ -27,7 +27,6 @@ export interface FileBrowserProps {
 }
 
 export function FileBrowser({ git, cwd, t }: FileBrowserProps) {
-  const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState<{ path: string; name: string; size?: number } | null>(null)
   const [preview, setPreview] = useState<FsReadResult | null>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)
@@ -69,18 +68,7 @@ export function FileBrowser({ git, cwd, t }: FileBrowserProps) {
 
   return (
     <div className="dshgit-fs">
-      <div
-        className="dshgit-group-head"
-        style={{ cursor: 'pointer', userSelect: 'none' }}
-        onClick={() => setCollapsed((v) => !v)}
-      >
-        <span style={{ fontSize: 10 }}>{collapsed ? '▸' : '▾'}</span>
-        <span>{t('files')}</span>
-        <span className="dshgit-spacer" />
-      </div>
-      {!collapsed ? (
-        <>
-          <div className="dshgit-fs-tree">
+      <div className="dshgit-fs-tree">
             <FsDir
               key={rootKey}
               git={git}
@@ -115,8 +103,6 @@ export function FileBrowser({ git, cwd, t }: FileBrowserProps) {
               </div>
             </div>
           ) : null}
-        </>
-      ) : null}
     </div>
   )
 }

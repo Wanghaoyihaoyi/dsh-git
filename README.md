@@ -6,7 +6,7 @@ A VS Code–like **Git Source Control panel** for the [DeepSeek Harness](https:/
 
 ## Features
 
-- **Toggleable panel** — an entry above Settings in the sidebar foot opens/closes the panel.
+- **Toggleable panel** — an entry above Settings in the sidebar foot opens/closes the panel; the panel header switches between "Git" and "Files" tabs for source control and workspace browsing.
 - **Repo detect & init** — a non-repo workspace shows a one-click "Initialize Git repository" (`git init -b main`).
 - **Per-file staging** — collapsible "Staged changes" / "Changes" lists with per-file `+`/`−`, plus stage-all / unstage-all.
 - **Git-semantic action button** — "Commit" when there are uncommitted changes (auto-stages if nothing is staged), "Push" when the branch tracks a remote and is ahead, "Publish branch" when the branch has no upstream but has local commits.

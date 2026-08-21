@@ -56,6 +56,8 @@ export type GitKey =
   | 'updating'
   | 'updateDone'
   | 'files'
+  | 'filesTab'
+  | 'gitTab'
   | 'fsEmpty'
   | 'fsBinary'
   | 'fsTooLarge'
@@ -118,6 +120,8 @@ export const gitZh: LocaleDictOf<'git'> = {
   updating: '更新中…',
   updateDone: '已更新到 v{version}，请完全重启 dsh web 并刷新浏览器以生效',
   files: '工作区文件',
+  filesTab: '文件',
+  gitTab: 'Git',
   fsEmpty: '空目录',
   fsBinary: '二进制文件，暂不支持预览',
   fsTooLarge: '文件过大，暂不预览',
@@ -175,6 +179,8 @@ export const gitEn: LocaleDictOf<'git'> = {
   updating: 'Updating…',
   updateDone: 'Updated to v{version}. Fully restart dsh web and refresh the browser to apply.',
   files: 'Workspace files',
+  filesTab: 'Files',
+  gitTab: 'Git',
   fsEmpty: 'Empty directory',
   fsBinary: 'Binary file; preview unavailable',
   fsTooLarge: 'File too large to preview',
