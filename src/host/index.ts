@@ -25,6 +25,7 @@ import { assertSafe, git, gitOrThrow, SAFE_BRANCH, SAFE_HASH, SAFE_REMOTE, SAFE_
 import { generateCommitMessage } from './commit-message.js'
 import { checkUpdateCached, updatePlugin } from './update.js'
 import { fsList, fsRead } from './fs.js'
+import { gitDiff } from './diff.js'
 
 export const name = 'dsh-git'
 export const inject = ['shell', 'llm', 'connection', 'agentDefaultModel']
@@ -182,6 +183,11 @@ async function dispatch(
       const rel = readRelPath(payload)
       return fsRead(cwd, rel, signal)
     }
+    case GIT_RPC.diff: {
+      const rel = readRelPath(payload)
+      const staged = readStaged(payload)
+      return gitDiff(ctx, cwd, rel, staged, signal)
+    }
     case GIT_RPC.generateMessageStart:
       return gitGenerateStart(ctx, cwd, config)
     default:
@@ -198,6 +204,13 @@ function readPath(payload: unknown): string {
 }
 
 /** Relative workspace path; '' is allowed (the root). */
+function readStaged(payload: unknown): boolean {
+  const staged = (payload as { staged?: unknown } | null | undefined)?.staged
+  if (staged === undefined) return false
+  if (typeof staged !== 'boolean') throw new Error('staged must be a boolean')
+  return staged
+}
+
 function readRelPath(payload: unknown): string {
   const path = (payload as { path?: unknown } | null | undefined)?.path
   if (path === undefined) return ''

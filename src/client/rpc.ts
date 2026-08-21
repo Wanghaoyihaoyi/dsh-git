@@ -7,6 +7,7 @@ import {
   GIT_RPC,
   type FsListResult,
   type FsReadResult,
+  type GitDiffResult,
   type GitBranch,
   type GitCommitDetail,
   type GitLogPage,
@@ -44,6 +45,7 @@ export interface GitApi {
   update(signal?: AbortSignal): Promise<GitUpdateResult>
   fsList(cwd: string, path?: string, signal?: AbortSignal): Promise<FsListResult>
   fsRead(cwd: string, path: string, signal?: AbortSignal): Promise<FsReadResult>
+  diff(cwd: string, path: string, staged: boolean, signal?: AbortSignal): Promise<GitDiffResult>
 }
 
 type Caller = (
@@ -85,5 +87,6 @@ export function createGitApi(call: Caller): GitApi {
     update: (signal) => unwrap(call, GIT_RPC.update, {}, signal),
     fsList: (cwd, path, signal) => unwrap(call, GIT_RPC.fsList, { cwd, path }, signal),
     fsRead: (cwd, path, signal) => unwrap(call, GIT_RPC.fsRead, { cwd, path }, signal),
+    diff: (cwd, path, staged, signal) => unwrap(call, GIT_RPC.diff, { cwd, path, staged }, signal),
   }
 }

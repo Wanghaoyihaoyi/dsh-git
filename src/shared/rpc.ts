@@ -29,6 +29,7 @@ export const GIT_RPC = {
   update: 'git/update',
   fsList: 'git/fsList',
   fsRead: 'git/fsRead',
+  diff: 'git/diff',
 } as const
 
 export type GitEndpoint = (typeof GIT_RPC)[keyof typeof GIT_RPC]
@@ -221,4 +222,23 @@ export interface FsListRequest extends GitRpcRequest {
 export interface FsReadRequest extends GitRpcRequest {
   /** File path, relative to cwd. */
   path: string
+}
+
+/** Diff request: one file's change, staged or unstaged. */
+export interface GitDiffRequest extends GitRpcRequest {
+  path: string
+  /** True → diff the index against HEAD (staged); false → the worktree against the index. */
+  staged: boolean
+}
+
+/** One file's unified diff (or its full content when newly added). */
+export interface GitDiffResult {
+  path: string
+  staged: boolean
+  /** Unified diff text; empty for a brand-new (untracked) file. */
+  diff: string
+  /** Present when the file is untracked: its full content is shown as an addition. */
+  content?: string
+  /** True when the diff exceeded the server-side cap and was truncated. */
+  truncated: boolean
 }

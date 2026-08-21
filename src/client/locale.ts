@@ -64,6 +64,7 @@ export type GitKey =
   | 'fsTruncated'
   | 'fsClosePreview'
   | 'fsOpenHint'
+  | 'diffTruncated'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -130,6 +131,7 @@ export const gitZh: LocaleDictOf<'git'> = {
   fsTruncated: '目录条目过多，已截断显示',
   fsClosePreview: '关闭预览',
   fsOpenHint: '双击预览',
+  diffTruncated: '差异过大，仅显示前面部分',
 }
 
 export const gitEn: LocaleDictOf<'git'> = {
@@ -191,4 +193,5 @@ export const gitEn: LocaleDictOf<'git'> = {
   fsTruncated: 'Too many entries; listing truncated',
   fsClosePreview: 'Close preview',
   fsOpenHint: 'Double-click to preview',
+  diffTruncated: 'Diff too large; showing the head only',
 }

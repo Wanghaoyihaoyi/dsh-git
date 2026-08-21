@@ -13,6 +13,7 @@ import { useIsNarrow } from './useIsNarrow.js'
 import { BranchMenu } from './BranchMenu.js'
 import { CommitGraph } from './CommitGraph.js'
 import { FileBrowser } from './FileBrowser.js'
+import { DiffView } from './DiffView.js'
 import { fileIcon } from './fileIcons.js'
 import {
   GitIcon,
@@ -65,6 +66,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const [stagedOpen, setStagedOpen] = useState(false)
   const [unstagedOpen, setUnstagedOpen] = useState(false)
   const [view, setView] = useState<'git' | 'files'>('git')
+  const [diffTarget, setDiffTarget] = useState<{ path: string; staged: boolean } | null>(null)
   const [branches, setBranches] = useState<GitBranch[]>([])
   const [branchMenuOpen, setBranchMenuOpen] = useState(false)
   const [remoteModalOpen, setRemoteModalOpen] = useState(false)
@@ -561,14 +563,21 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               {stagedOpen ? (
                 <div className="dshgit-group-body">
                 {status.staged.map((file) => (
-                  <div className="dshgit-row" key={`staged:${file.path}`}>
+                  <div
+                    className={'dshgit-row dshgit-row-clickable' + (diffTarget?.path === file.path && diffTarget.staged ? ' dshgit-row-active' : '')}
+                    key={`staged:${file.path}`}
+                    onClick={() => setDiffTarget((prev) => (prev?.path === file.path && prev.staged ? null : { path: file.path, staged: true }))}
+                  >
                     <span className="dshgit-fileicon">{fileIcon(file.path)}</span>
                     <span className="dshgit-path" title={file.path}>{basename(file.path)}</span>
                     <button
                       className="dshgit-ghost"
                       title={t('unstage')}
                       disabled={busy !== null}
-                      onClick={() => void run(t('unstage'), () => git.unstage(cwd, file.path))}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        void run(t('unstage'), () => git.unstage(cwd, file.path))
+                      }}
                     >
                       −
                     </button>
@@ -599,14 +608,21 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               {unstagedOpen ? (
                 <div className="dshgit-group-body">
                 {status.unstaged.map((file) => (
-                  <div className="dshgit-row" key={`unstaged:${file.path}`}>
+                  <div
+                    className={'dshgit-row dshgit-row-clickable' + (diffTarget?.path === file.path && !diffTarget.staged ? ' dshgit-row-active' : '')}
+                    key={`unstaged:${file.path}`}
+                    onClick={() => setDiffTarget((prev) => (prev?.path === file.path && !prev.staged ? null : { path: file.path, staged: false }))}
+                  >
                     <span className="dshgit-fileicon">{fileIcon(file.path)}</span>
                     <span className="dshgit-path" title={file.path}>{basename(file.path)}</span>
                     <button
                       className="dshgit-ghost"
                       title={t('stage')}
                       disabled={busy !== null}
-                      onClick={() => void run(t('stage'), () => git.stage(cwd, file.path))}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        void run(t('stage'), () => git.stage(cwd, file.path))
+                      }}
                     >
                       +
                     </button>
@@ -616,6 +632,15 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               ) : null}
             </div>
             </div>
+            <DiffView
+              git={git}
+              cwd={cwd}
+              path={diffTarget?.path ?? ''}
+              staged={diffTarget?.staged ?? false}
+              visible={diffTarget !== null}
+              onClose={() => setDiffTarget(null)}
+              t={t}
+            />
             <CommitGraph git={git} cwd={cwd} onError={setError} t={t} />
           </div>
         )}
