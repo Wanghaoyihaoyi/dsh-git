@@ -1,6 +1,8 @@
-# @mojiexuan/dsh-git
+# @wanghaoyihaoyi/dsh-git
 
-A VS Code–like **Git Source Control panel** for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web UI — repo init, per-file staging, commit/push/publish/pull, branch & remote management, AI commit messages, and a commit-history graph, all in the browser.
+> Fork of [`@mojiexuan/dsh-git`](https://github.com/mojiexuan/dsh-git) — MIT, © 2026 陈佳宝. Maintained by **Wanghaoyihaoyi**.
+
+A VS Code–like **Git Source Control panel** for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web UI — repo init, per-file staging, commit/push/publish/pull, branch & remote management, AI commit messages, a workspace file browser, one-file diff previews, and a commit-history graph, all in the browser.
 
 > 中文文档：[docs/README.zh.md](docs/README.zh.md)
 
@@ -30,7 +32,7 @@ A VS Code–like **Git Source Control panel** for the [DeepSeek Harness](https:/
 ## Install
 
 ```sh
-dsh plugin --profile web add @mojiexuan/dsh-git
+dsh plugin --profile web add @wanghaoyihaoyi/dsh-git
 ```
 
 Then start `dsh web`.
@@ -39,10 +41,10 @@ Then start `dsh web`.
 
 ```sh
 # Uninstall (same command for the published package and a local link)
-dsh plugin --profile web remove @mojiexuan/dsh-git
+dsh plugin --profile web remove @wanghaoyihaoyi/dsh-git
 
 # Update to the latest published version
-dsh plugin --profile web update @mojiexuan/dsh-git
+dsh plugin --profile web update @wanghaoyihaoyi/dsh-git
 ```
 
 For a linked local checkout (`dsh plugin --profile web add .`), there is no

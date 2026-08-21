@@ -1,4 +1,4 @@
-// @mojiexuan/dsh-git — host half.
+// @wanghaoyihaoyi/dsh-git — host half.
 //
 // Registers a namespaced `git/*` RPC surface on the shared `/api` channel via
 // `ctx.connection.rpc.intercept`, locked to loopback (the browser UI at

@@ -1,4 +1,4 @@
-// @mojiexuan/dsh-git — client half.
+// @wanghaoyihaoyi/dsh-git — client half.
 //
 // Registers two entries:
 //   - the git panel into the layout's right `details` column (docked, squeezes
@@ -30,7 +30,7 @@ function injectStyles() {
   if (typeof document === 'undefined') return
   if (document.querySelector(`style[data-plugin-css=${JSON.stringify(STYLE_TAG_ID)}]`)) return
   const tag = document.createElement('style')
-  tag.dataset.plugin = '@mojiexuan/dsh-git'
+  tag.dataset.plugin = '@wanghaoyihaoyi/dsh-git'
   tag.dataset.pluginCss = STYLE_TAG_ID
   tag.textContent = PANEL_CSS
   document.head.appendChild(tag)
@@ -44,7 +44,7 @@ export function apply(ctx: ClientContext) {
   // the shipped api-gateway client resolves it the same way.
   const connection = ctx.get('connection') as ConnectionHandle | undefined
   if (connection === undefined) {
-    throw new Error('@mojiexuan/dsh-git: client connection service is unavailable')
+    throw new Error('@wanghaoyihaoyi/dsh-git: client connection service is unavailable')
   }
   const git = createGitApi((endpoint, payload, signal) =>
     connection.rpc.call('/api', endpoint, payload, signal),

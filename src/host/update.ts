@@ -7,7 +7,7 @@
 // proxy failure reports `hasUpdate: false` plus an `error`, so the client can
 // stay silent instead of surfacing a transient warning.
 //
-// Update — runs `dsh plugin --profile <name> add @mojiexuan/dsh-git@<version>`
+// Update — runs `dsh plugin --profile <name> add @wanghaoyihaoyi/dsh-git@<version>`
 // under `danger-full-access` (it writes `$DSH_HOME/profiles/...` and needs the
 // network). `add <pkg>@<version>` — rather than `update` — reliably bumps the
 // installed version across a minor/major range, since pnpm saves a caret range
@@ -16,7 +16,7 @@
 // resolve the update backwards.
 //
 // The profile name is derived from this module's own install path
-// (`.../profiles/<name>/node_modules/@mojiexuan/dsh-git/lib/index.js`); for a
+// (`.../profiles/<name>/node_modules/@wanghaoyihaoyi/dsh-git/lib/index.js`); for a
 // `link:` dev checkout (installed outside any profile) it falls back to scanning
 // `$DSH_HOME/profiles/*` for a manifest that depends on this package. Updating a
 // link install replaces it with the published npm version.
@@ -28,7 +28,7 @@ import type { ShellExecutor, ShellRunResult } from '@deepseek-ai/dsh-shell'
 import type { GitUpdateInfo, GitUpdateResult } from '../shared/rpc.js'
 import { stderrText, stdoutText } from './git.js'
 
-const PACKAGE_NAME = '@mojiexuan/dsh-git'
+const PACKAGE_NAME = '@wanghaoyihaoyi/dsh-git'
 const DEFAULT_REGISTRY_URL = 'https://registry.npmjs.org'
 const CHECK_TIMEOUT_MS = 10_000
 const CACHE_TTL_MS = 10 * 60 * 1000

@@ -1,6 +1,8 @@
-# @mojiexuan/dsh-git
+# @wanghaoyihaoyi/dsh-git
 
-一个为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 打造的、类似 VS Code 的 **Git 源代码管理面板**插件（bundle）。在浏览器里提供仓库初始化、逐文件暂存、提交/推送/发布/拉取、分支与远程管理、AI 提交信息、以及提交历史图。
+> Fork 自 [`@mojiexuan/dsh-git`](https://github.com/mojiexuan/dsh-git) —— MIT 协议，© 2026 陈佳宝；由 **Wanghaoyihaoyi** 维护。
+
+一个为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 打造的、类似 VS Code 的 **Git 源代码管理面板**插件（bundle）。在浏览器里提供仓库初始化、逐文件暂存、提交/推送/发布/拉取、分支与远程管理、AI 提交信息、工作区文件浏览、单文件 diff 预览、以及提交历史图。
 
 > English docs: [README.md](../README.md)
 
@@ -30,7 +32,7 @@
 ## 安装
 
 ```sh
-dsh plugin --profile web add @mojiexuan/dsh-git
+dsh plugin --profile web add @wanghaoyihaoyi/dsh-git
 ```
 
 然后启动 `dsh web`。
@@ -39,10 +41,10 @@ dsh plugin --profile web add @mojiexuan/dsh-git
 
 ```sh
 # 卸载（正式发布版与本地 link 版命令相同）
-dsh plugin --profile web remove @mojiexuan/dsh-git
+dsh plugin --profile web remove @wanghaoyihaoyi/dsh-git
 
 # 更新到最新发布版
-dsh plugin --profile web update @mojiexuan/dsh-git
+dsh plugin --profile web update @wanghaoyihaoyi/dsh-git
 ```
 
 本地 link 开发（`dsh plugin --profile web add .`）无需单独的更新命令：改完代码 `npm run build` 后，完全重启 `dsh web`（host bundle）并刷新浏览器（client bundle）即可。

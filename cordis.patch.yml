@@ -1,4 +1,4 @@
-# @mojiexuan/dsh-git — git source-control sidebar bundle.
+# @wanghaoyihaoyi/dsh-git — git source-control sidebar bundle.
 #
 # One insert: the host plugin row. Its browser half is discovered automatically
 # because the package declares `dsh.client`; the client bundle is served under
@@ -10,4 +10,4 @@
 #     config: { maxDiffChars: 8000 }
 - insert:
     - id: git
-      name: '@mojiexuan/dsh-git'
+      name: '@wanghaoyihaoyi/dsh-git'
