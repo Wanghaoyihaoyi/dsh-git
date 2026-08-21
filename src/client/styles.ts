@@ -94,6 +94,15 @@ export const PANEL_CSS = `
 .dshgit-bmenu-dots{border:none;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;padding:0 6px;font-size:13px;line-height:1;font-family:inherit}
 .dshgit-bmenu-dots:hover{color:var(--dsw-alias-label-primary)}
 .dshgit-bmenu-empty{color:var(--dsw-alias-label-secondary);padding:12px;text-align:center}
+.dshgit-rmenu{width:260px}
+.dshgit-rmenu-url-row{display:flex;align-items:center;gap:8px;padding:8px 10px}
+.dshgit-rmenu-url{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--dsw-alias-label-primary)}
+.dshgit-rmenu-copy{flex:none;display:inline-flex;align-items:center;gap:4px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;padding:2px 4px;border-radius:4px}
+.dshgit-rmenu-copy:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
+.dshgit-rmenu-copied{font-size:12px;color:var(--dsw-alias-state-business-primary)}
+.dshgit-rmenu-divider{height:1px;background:var(--dsw-alias-border-l2);margin:2px 0}
+.dshgit-rmenu-danger{display:flex;align-items:center;gap:6px;width:100%;box-sizing:border-box;border:none;background:transparent;color:var(--dsw-alias-state-error-primary);cursor:pointer;padding:8px 10px;font-size:13px;font-family:inherit;text-align:left}
+.dshgit-rmenu-danger:hover{background:var(--dsw-alias-interactive-bg-hover-danger)}
 .dshgit-modal-input{width:100%;height:36px;box-sizing:border-box;margin:0;padding:0 10px;border:1px solid var(--dsw-alias-border-l3);border-radius:8px;outline:none;background:transparent;color:var(--dsw-alias-label-primary);font-size:14px;font-family:inherit}
 .dshgit-modal-text{margin:0;color:var(--dsw-alias-label-primary);font-size:14px;line-height:22px}
 .dshgit-history{flex:0 0 auto;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--dsw-alias-border-l2)}

@@ -14,6 +14,7 @@ import { BranchMenu } from './BranchMenu.js'
 import { CommitGraph } from './CommitGraph.js'
 import { FileBrowser } from './FileBrowser.js'
 import { DiffView } from './DiffView.js'
+import { RemoteMenu } from './RemoteMenu.js'
 import { fileIcon } from './fileIcons.js'
 import {
   GitIcon,
@@ -69,10 +70,12 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const [diffTarget, setDiffTarget] = useState<{ path: string; staged: boolean } | null>(null)
   const [branches, setBranches] = useState<GitBranch[]>([])
   const [branchMenuOpen, setBranchMenuOpen] = useState(false)
+  const [remoteMenuOpen, setRemoteMenuOpen] = useState(false)
   const [remoteModalOpen, setRemoteModalOpen] = useState(false)
   const [remoteUrl, setRemoteUrl] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<{ kind: 'branch' | 'remote'; name: string } | null>(null)
   const branchAnchorRef = useRef<HTMLButtonElement>(null)
+  const remoteAnchorRef = useRef<HTMLButtonElement>(null)
 
   const workspaces = useWorkspaces((state) => state)
   // The git panel is workspace-scoped: follow the CURRENT session's workspace
@@ -385,12 +388,13 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                 <span className="dshgit-branch-spacer" />
                 {remote ? (
                   <span className="dshgit-remote">
-                    <span className="dshgit-remote-name" title={remote.name}>{remote.name}</span>
+                    <span className="dshgit-remote-name" title={remote.url}>{remote.name}</span>
                     <button
                       type="button"
                       className="dshgit-remote-dots"
-                      title={t('deleteRemote', { name: remote.name })}
-                      onClick={() => setDeleteTarget({ kind: 'remote', name: remote.name })}
+                      ref={remoteAnchorRef}
+                      title={t('remoteMenu', { name: remote.name })}
+                      onClick={() => setRemoteMenuOpen((value) => !value)}
                     >
                       •••
                     </button>
@@ -651,6 +655,15 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
 
         {error ? <div className="dshgit-error">{error}</div> : null}
       </div>
+
+      <RemoteMenu
+        name={remote?.name ?? ''}
+        url={remote?.url ?? ''}
+        anchor={remoteMenuOpen ? remoteAnchorRef.current : null}
+        onClose={() => setRemoteMenuOpen(false)}
+        onDelete={() => setDeleteTarget({ kind: 'remote', name: remote?.name ?? '' })}
+        t={t}
+      />
 
       <BranchMenu
         branches={branches}

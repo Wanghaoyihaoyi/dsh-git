@@ -10,6 +10,9 @@ export type GitKey =
   | 'refresh'
   | 'pullAll'
   | 'deleteRemote'
+  | 'remoteMenu'
+  | 'remoteDetails'
+  | 'copyRemoteUrl'
   | 'createRemote'
   | 'noWorkspace'
   | 'notRepo'
@@ -77,6 +80,9 @@ export const gitZh: LocaleDictOf<'git'> = {
   refresh: '刷新',
   pullAll: '从所有远程存储库拉取所有分支最新代码',
   deleteRemote: '删除远程仓库 {name}',
+  remoteMenu: '远程仓库管理',
+  remoteDetails: '远程：{name}',
+  copyRemoteUrl: '复制远程地址',
   createRemote: '创建远程仓库',
   noWorkspace: '暂无工作区',
   notRepo: '非 Git 仓库',
@@ -139,6 +145,9 @@ export const gitEn: LocaleDictOf<'git'> = {
   refresh: 'Refresh',
   pullAll: 'Fetch latest code from all remotes and branches',
   deleteRemote: 'Remove remote {name}',
+  remoteMenu: 'Remote management',
+  remoteDetails: 'Remote: {name}',
+  copyRemoteUrl: 'Copy remote URL',
   createRemote: 'Create remote repository',
   noWorkspace: 'No workspace',
   notRepo: 'Not a git repository',
