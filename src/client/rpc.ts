@@ -8,6 +8,8 @@ import {
   type FsListResult,
   type FsReadResult,
   type GitDiffResult,
+  type GitShowFileResult,
+  type GitStash,
   type GitBranch,
   type GitCommitDetail,
   type GitLogPage,
@@ -47,6 +49,13 @@ export interface GitApi {
   fsList(cwd: string, path?: string, signal?: AbortSignal): Promise<FsListResult>
   fsRead(cwd: string, path: string, signal?: AbortSignal): Promise<FsReadResult>
   diff(cwd: string, path: string, staged: boolean, signal?: AbortSignal): Promise<GitDiffResult>
+  discard(cwd: string, path: string, untracked: boolean, signal?: AbortSignal): Promise<GitStatus>
+  stashPush(cwd: string, message: string | undefined, signal?: AbortSignal): Promise<GitStatus>
+  stashList(cwd: string, signal?: AbortSignal): Promise<GitStash[]>
+  stashApply(cwd: string, index: number, signal?: AbortSignal): Promise<GitStatus>
+  stashDrop(cwd: string, index: number, signal?: AbortSignal): Promise<GitStash[]>
+  undoCommit(cwd: string, signal?: AbortSignal): Promise<GitStatus>
+  showFile(cwd: string, hash: string, path: string, signal?: AbortSignal): Promise<GitShowFileResult>
 }
 
 type Caller = (
@@ -90,5 +99,12 @@ export function createGitApi(call: Caller): GitApi {
     fsList: (cwd, path, signal) => unwrap(call, GIT_RPC.fsList, { cwd, path }, signal),
     fsRead: (cwd, path, signal) => unwrap(call, GIT_RPC.fsRead, { cwd, path }, signal),
     diff: (cwd, path, staged, signal) => unwrap(call, GIT_RPC.diff, { cwd, path, staged }, signal),
+    discard: (cwd, path, untracked, signal) => unwrap(call, GIT_RPC.discard, { cwd, path, untracked }, signal),
+    stashPush: (cwd, message, signal) => unwrap(call, GIT_RPC.stashPush, { cwd, message }, signal),
+    stashList: (cwd, signal) => unwrap(call, GIT_RPC.stashList, { cwd }, signal),
+    stashApply: (cwd, index, signal) => unwrap(call, GIT_RPC.stashApply, { cwd, index }, signal),
+    stashDrop: (cwd, index, signal) => unwrap(call, GIT_RPC.stashDrop, { cwd, index }, signal),
+    undoCommit: (cwd, signal) => unwrap(call, GIT_RPC.undoCommit, { cwd }, signal),
+    showFile: (cwd, hash, path, signal) => unwrap(call, GIT_RPC.showFile, { cwd, hash, path }, signal),
   }
 }

@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Button, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { GlobalStandardProps, TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
-import type { GitBranch, GitRemote, GitStatus } from '../shared/rpc.js'
+import type { GitBranch, GitRemote, GitStash, GitStatus } from '../shared/rpc.js'
 import type { GitApi } from './rpc.js'
 import { panelStore } from './panelStore.js'
 import { useIsNarrow } from './useIsNarrow.js'
@@ -23,6 +23,9 @@ import {
   RefreshIcon,
   SparkleIcon,
   UpdateIcon,
+  UndoIcon,
+  StashIcon,
+  TrashIcon,
 } from './icons.js'
 
 function basename(path: string): string {
@@ -73,6 +76,9 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const [remoteMenuOpen, setRemoteMenuOpen] = useState(false)
   const [remoteModalOpen, setRemoteModalOpen] = useState(false)
   const [editUrlTarget, setEditUrlTarget] = useState<GitRemote | null>(null)
+  const [stashMenuOpen, setStashMenuOpen] = useState(false)
+  const [stashes, setStashes] = useState<GitStash[]>([])
+  const [stashMessage, setStashMessage] = useState('')
   const [remoteUrl, setRemoteUrl] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<{ kind: 'branch' | 'remote'; name: string } | null>(null)
   const branchAnchorRef = useRef<HTMLButtonElement>(null)
@@ -286,6 +292,59 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
     }
   }, [git, cwd, busy, editUrlTarget, remoteUrl, t])
 
+  const loadStashes = useCallback(async () => {
+    if (!cwd) return
+    try {
+      setStashes(await git.stashList(cwd))
+    } catch {
+      // non-fatal
+    }
+  }, [git, cwd])
+
+  const handleStashPush = useCallback(async () => {
+    if (!cwd || busy) return
+    setBusy(t('stashPush'))
+    setError(null)
+    try {
+      setStatus(await git.stashPush(cwd, stashMessage.trim() || undefined))
+      setStashMessage('')
+      setStashMenuOpen(false)
+      await loadStashes()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(null)
+    }
+  }, [git, cwd, busy, stashMessage, t, loadStashes])
+
+  const handleStashApply = useCallback(async (index: number) => {
+    if (!cwd || busy) return
+    setBusy(t('stashApply'))
+    setError(null)
+    try {
+      setStatus(await git.stashApply(cwd, index))
+      await loadStashes()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(null)
+    }
+  }, [git, cwd, busy, t, loadStashes])
+
+  const handleStashDrop = useCallback(async (index: number) => {
+    if (!cwd || busy) return
+    if (!window.confirm(t('stashDropConfirm'))) return
+    setBusy(t('stashDrop'))
+    setError(null)
+    try {
+      setStashes(await git.stashDrop(cwd, index))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(null)
+    }
+  }, [git, cwd, busy, t])
+
   const handlePull = useCallback(async () => {
     if (!cwd || busy) return
     setBusy(t('pull'))
@@ -324,6 +383,8 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const remote = status?.remote
   const stagedCount = status?.staged.length ?? 0
   const hasChanges = stagedCount > 0 || (status?.unstaged.length ?? 0) > 0
+  const untrackedFiles = (status?.unstaged ?? []).filter((f) => f.worktree === '?')
+  const modifiedFiles = (status?.unstaged ?? []).filter((f) => f.worktree !== '?')
   const hasUpstream = status?.upstream !== undefined
   // Uncommitted changes always win: commit them first. Otherwise, with a remote
   // configured, offer push (tracked branch, ahead > 0) or publish (untracked
@@ -479,6 +540,34 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
           </div>
         ) : (
           <div className="dshgit-body">
+            <div className="dshgit-toolbar">
+              <button
+                type="button"
+                className="dshgit-tool"
+                title={t('undoCommitHint')}
+                disabled={busy !== null || !status?.hasCommits}
+                onClick={() => {
+                  if (!window.confirm(t('undoCommitConfirm'))) return
+                  void run(t('undoCommit'), () => git.undoCommit(cwd))
+                }}
+              >
+                <UndoIcon size={14} />
+                <span>{t('undoCommit')}</span>
+              </button>
+              <button
+                type="button"
+                className="dshgit-tool"
+                title={t('stashPushHint')}
+                disabled={busy !== null || !hasChanges}
+                onClick={() => {
+                  setStashMenuOpen(true)
+                }}
+              >
+                <StashIcon size={14} />
+                <span>{t('stashPush')}</span>
+              </button>
+              <span className="dshgit-spacer" />
+            </div>
             <div className="dshgit-input-box">
               <input
                 className="dshgit-input"
@@ -627,14 +716,62 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               </div>
               {unstagedOpen ? (
                 <div className="dshgit-group-body">
-                {status.unstaged.map((file) => (
+                {modifiedFiles.map((file) => (
                   <div
                     className={'dshgit-row dshgit-row-clickable' + (diffTarget?.path === file.path && !diffTarget.staged ? ' dshgit-row-active' : '')}
-                    key={`unstaged:${file.path}`}
+                    key={`modified:${file.path}`}
                     onClick={() => setDiffTarget((prev) => (prev?.path === file.path && !prev.staged ? null : { path: file.path, staged: false }))}
                   >
                     <span className="dshgit-fileicon">{fileIcon(file.path)}</span>
                     <span className="dshgit-path" title={file.path}>{basename(file.path)}</span>
+                    <button
+                      className="dshgit-ghost dshgit-danger-ghost"
+                      title={t('discard')}
+                      disabled={busy !== null}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        if (!window.confirm(t('discardFileConfirm', { name: basename(file.path) }))) return
+                        void run(t('discard'), () => git.discard(cwd, file.path, false))
+                      }}
+                    >
+                      <TrashIcon size={13} />
+                    </button>
+                    <button
+                      className="dshgit-ghost"
+                      title={t('stage')}
+                      disabled={busy !== null}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        void run(t('stage'), () => git.stage(cwd, file.path))
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                ))}
+                {untrackedFiles.length > 0 ? (
+                  <div className="dshgit-subhead">{t('untracked')} ({untrackedFiles.length})</div>
+                ) : null}
+                {untrackedFiles.map((file) => (
+                  <div
+                    className={'dshgit-row dshgit-row-clickable dshgit-row-untracked' + (diffTarget?.path === file.path && !diffTarget.staged ? ' dshgit-row-active' : '')}
+                    key={`untracked:${file.path}`}
+                    onClick={() => setDiffTarget((prev) => (prev?.path === file.path && !prev.staged ? null : { path: file.path, staged: false }))}
+                  >
+                    <span className="dshgit-fileicon">{fileIcon(file.path)}</span>
+                    <span className="dshgit-path" title={file.path}>{basename(file.path)}</span>
+                    <button
+                      className="dshgit-ghost dshgit-danger-ghost"
+                      title={t('discard')}
+                      disabled={busy !== null}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        if (!window.confirm(t('discardUntrackedConfirm', { name: basename(file.path) }))) return
+                        void run(t('discard'), () => git.discard(cwd, file.path, true))
+                      }}
+                    >
+                      <TrashIcon size={13} />
+                    </button>
                     <button
                       className="dshgit-ghost"
                       title={t('stage')}
@@ -746,6 +883,60 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
             if (event.key === 'Enter' && remoteUrl.trim().length > 0) void handleEditRemote()
           }}
         />
+      </Modal>
+
+      <Modal
+        open={stashMenuOpen}
+        onClose={() => setStashMenuOpen(false)}
+        title={t('stashTitle')}
+        closeLabel={t('close')}
+        footer={
+          <>
+            <Button variant="ghost" size="md" onClick={() => setStashMenuOpen(false)}>{t('cancel')}</Button>
+            <Button variant="primary" size="md" disabled={busy !== null || !hasChanges} onClick={() => void handleStashPush()}>{t('stashPush')}</Button>
+          </>
+        }
+      >
+        <input
+          className="dshgit-modal-input"
+          value={stashMessage}
+          placeholder={t('stashMessagePlaceholder')}
+          spellCheck={false}
+          autoFocus
+          onChange={(event) => setStashMessage(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && hasChanges) void handleStashPush()
+          }}
+        />
+        <div className="dshgit-stash-list">
+          {stashes.length === 0 ? (
+            <div className="dshgit-stash-empty">{t('noStashes')}</div>
+          ) : (
+            stashes.map((stash) => (
+              <div className="dshgit-stash-row" key={stash.ref}>
+                <button
+                  type="button"
+                  className="dshgit-stash-apply"
+                  title={stash.message}
+                  disabled={busy !== null}
+                  onClick={() => void handleStashApply(Number(stash.ref.match(/\d+/)?.[0] ?? 0))}
+                >
+                  <StashIcon size={13} />
+                  <span className="dshgit-stash-message">{stash.message}</span>
+                </button>
+                <button
+                  type="button"
+                  className="dshgit-ghost"
+                  title={t('stashDrop')}
+                  disabled={busy !== null}
+                  onClick={() => void handleStashDrop(Number(stash.ref.match(/\d+/)?.[0] ?? 0))}
+                >
+                  <TrashIcon size={13} />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       </Modal>
 
       <Modal

@@ -38,6 +38,28 @@ export const PANEL_CSS = `
 .dshgit-input:disabled{opacity:.6}
 .dshgit-sparkle{flex:none;width:36px;height:36px;box-sizing:border-box;margin:0;padding:0;background:transparent;border:none;border-left:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;border-radius:0}
 .dshgit-sparkle:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
+.dshgit-toolbar{flex:none;display:flex;align-items:center;gap:4px;min-height:0}
+.dshgit-tool{flex:none;display:inline-flex;align-items:center;gap:4px;height:26px;box-sizing:border-box;padding:0 8px;border:none;border-radius:6px;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:12px;font-family:inherit}
+.dshgit-tool:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
+.dshgit-tool:disabled{opacity:.4;cursor:default}
+.dshgit-tool .dshgit-spacer{flex:1}
+.dshgit-danger-ghost{color:var(--dsw-alias-label-secondary)}
+.dshgit-danger-ghost:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}
+.dshgit-subhead{display:flex;align-items:center;gap:6px;padding:6px 8px 3px 8px;color:var(--dsw-alias-label-secondary);font-size:11px;font-weight:600;letter-spacing:.3px}
+.dshgit-row-untracked .dshgit-path{color:var(--dsw-alias-label-secondary)}
+.dshgit-stash-list{display:flex;flex-direction:column;gap:2px;max-height:200px;overflow-y:auto;margin-top:12px;border-top:1px solid var(--dsw-alias-border-l2);padding-top:8px}
+.dshgit-stash-row{display:flex;align-items:center;gap:6px;border-radius:6px}
+.dshgit-stash-row:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.dshgit-stash-apply{flex:1;min-width:0;display:flex;align-items:center;gap:6px;border:none;background:transparent;color:var(--dsw-alias-label-primary);cursor:pointer;padding:6px 8px;font-size:13px;font-family:inherit;text-align:left}
+.dshgit-stash-message{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dshgit-stash-empty{color:var(--dsw-alias-label-secondary);padding:12px 0;text-align:center;font-size:12px}
+.dshgit-viewer{position:fixed;z-index:1003;left:50%;top:50%;transform:translate(-50%,-50%);width:min(640px,90vw);max-height:70vh;display:flex;flex-direction:column;box-sizing:border-box;background:var(--dsw-specific-menu,var(--dsw-alias-bg-base));color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l3);border-radius:10px;box-shadow:var(--dsw-shadow-lv3,0 8px 24px rgba(0,0,0,.18));overflow:hidden}
+.dshgit-viewer-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--dsw-alias-border-l2)}
+.dshgit-viewer-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+.dshgit-viewer-body{flex:1;min-height:0;overflow:auto}
+.dshgit-viewer-body::-webkit-scrollbar{width:8px}
+.dshgit-viewer-body::-webkit-scrollbar-thumb{background:var(--dsw-alias-scrollbar-bg-l2);border-radius:4px}
+.dshgit-viewer-pre{margin:0;padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:18px;white-space:pre;word-break:normal}
 .dshgit-sparkle:disabled{opacity:.4;cursor:default}
 .dshgit-action{width:100%;border-radius:8px !important}
 .dshgit-lists{flex:0 0 auto;min-height:0;display:flex;flex-direction:column;overflow-y:auto;margin-right:-12px;padding-right:12px;max-height:45%}

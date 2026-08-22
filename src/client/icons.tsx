@@ -89,3 +89,30 @@ export function CopyIcon(props: IconProps) {
     </Svg>
   )
 }
+
+/** Discard (trash can). */
+export function TrashIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M5 3.5h9V14a1.5 1.5 0 0 1-1.5 1.5h-6A1.5 1.5 0 0 1 5 14V3.5Zm1.5 2V14h5V5.5h-5ZM3 2h11v1.5H3V2ZM7.5 7h1.5v6H7.5V7Zm2.5 0h1.5v6H10V7Z" />
+    </Svg>
+  )
+}
+
+/** Undo last commit (rotate left). */
+export function UndoIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M6.5 3.5 3 7l3.5 3.5 1.05-1.05L5.56 8H11a3.5 3.5 0 0 1 0 7h-4v-1.5h4a2 2 0 0 0 0-4H5.56l1.99-1.95L6.5 3.5Z" />
+    </Svg>
+  )
+}
+
+/** Stash (box with arrow). */
+export function StashIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M2.5 2.5h11V15H2.5V2.5Zm1.5 1.5v9.5h8V4H4ZM8 4.5 11 8 9.9 9.1 8.75 7.95V11h-1.5V7.95L5.1 9.1 5 8l3-3.5Z" />
+    </Svg>
+  )
+}

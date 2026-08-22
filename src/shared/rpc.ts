@@ -31,6 +31,13 @@ export const GIT_RPC = {
   fsRead: 'git/fsRead',
   diff: 'git/diff',
   remoteSetUrl: 'git/remoteSetUrl',
+  discard: 'git/discard',
+  stashPush: 'git/stashPush',
+  stashList: 'git/stashList',
+  stashApply: 'git/stashApply',
+  stashDrop: 'git/stashDrop',
+  undoCommit: 'git/undoCommit',
+  showFile: 'git/showFile',
 } as const
 
 export type GitEndpoint = (typeof GIT_RPC)[keyof typeof GIT_RPC]
@@ -248,4 +255,26 @@ export interface GitDiffResult {
   content?: string
   /** True when the diff exceeded the server-side cap and was truncated. */
   truncated: boolean
+}
+
+/** One stash entry. */
+export interface GitStash {
+  /** `stash@{n}` — the ref used by apply/drop. */
+  ref: string
+  /** Short hash of the stash commit (for display). */
+  hash: string
+  /** Message the stash was pushed with. */
+  message: string
+  /** Branch the stash was created on. */
+  branch?: string
+  /** ISO-8601 creation date. */
+  date: string
+}
+
+/** Result of showing a file at a commit (git show <commit>:<path>). */
+export interface GitShowFileResult {
+  content?: string
+  binary: boolean
+  tooLarge: boolean
+  size: number
 }

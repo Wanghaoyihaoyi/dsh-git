@@ -70,6 +70,24 @@ export type GitKey =
   | 'fsClosePreview'
   | 'fsOpenHint'
   | 'diffTruncated'
+  | 'undoCommit'
+  | 'undoCommitHint'
+  | 'undoCommitConfirm'
+  | 'stashPush'
+  | 'stashPushHint'
+  | 'stashTitle'
+  | 'stashMessagePlaceholder'
+  | 'stashApply'
+  | 'stashDrop'
+  | 'stashDropConfirm'
+  | 'noStashes'
+  | 'discard'
+  | 'discardFileConfirm'
+  | 'discardUntrackedConfirm'
+  | 'untracked'
+  | 'viewAtCommit'
+  | 'viewerBinary'
+  | 'viewerTooLarge'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -142,6 +160,24 @@ export const gitZh: LocaleDictOf<'git'> = {
   fsClosePreview: '关闭预览',
   fsOpenHint: '双击预览',
   diffTruncated: '差异过大，仅显示前面部分',
+  undoCommit: '撤销提交',
+  undoCommitHint: '撤销上一次提交（改动保留在工作区）',
+  undoCommitConfirm: '确定撤销上一次提交吗？改动会保留（软重置）。',
+  stashPush: '暂存改动',
+  stashPushHint: '把当前改动存入暂存袋',
+  stashTitle: 'Stash 暂存袋',
+  stashMessagePlaceholder: '暂存说明（可选）',
+  stashApply: '应用暂存',
+  stashDrop: '删除暂存',
+  stashDropConfirm: '确定删除这条暂存记录吗？此操作不可撤销。',
+  noStashes: '暂无暂存记录',
+  discard: '丢弃改动',
+  discardFileConfirm: '丢弃对「{name}」的改动？此操作不可撤销。',
+  discardUntrackedConfirm: '删除未跟踪文件「{name}」？此操作不可撤销。',
+  untracked: '未跟踪',
+  viewAtCommit: '查看此提交中的内容',
+  viewerBinary: '二进制文件，无法预览',
+  viewerTooLarge: '文件过大，无法预览',
 }
 
 export const gitEn: LocaleDictOf<'git'> = {
@@ -209,4 +245,22 @@ export const gitEn: LocaleDictOf<'git'> = {
   fsClosePreview: 'Close preview',
   fsOpenHint: 'Double-click to preview',
   diffTruncated: 'Diff too large; showing the head only',
+  undoCommit: 'Undo commit',
+  undoCommitHint: 'Undo the last commit (changes stay in the worktree)',
+  undoCommitConfirm: 'Undo the last commit? Changes are kept (soft reset).',
+  stashPush: 'Stash',
+  stashPushHint: 'Put current changes into the stash',
+  stashTitle: 'Stash',
+  stashMessagePlaceholder: 'Stash message (optional)',
+  stashApply: 'Apply',
+  stashDrop: 'Drop',
+  stashDropConfirm: 'Drop this stash? This cannot be undone.',
+  noStashes: 'No stashes',
+  discard: 'Discard changes',
+  discardFileConfirm: 'Discard changes to "{name}"? This cannot be undone.',
+  discardUntrackedConfirm: 'Delete untracked file "{name}"? This cannot be undone.',
+  untracked: 'Untracked',
+  viewAtCommit: 'View content at this commit',
+  viewerBinary: 'Binary file; preview unavailable',
+  viewerTooLarge: 'File too large to preview',
 }

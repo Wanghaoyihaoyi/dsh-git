@@ -142,7 +142,7 @@ function GraphSvg({ cells, width, height, laneW, dotY }: { cells: GraphRow['cell
   )
 }
 
-function FilesBlock({ state, t }: { state: DetailState | undefined; t: TranslateNS<'git'> }) {
+function FilesBlock({ state, t, onOpenFile }: { state: DetailState | undefined; t: TranslateNS<'git'>; onOpenFile: (hash: string, path: string) => void }) {
   if (state === undefined || state.status === 'loading') {
     return <div className="dshgit-log-files-note">{t('loading')}</div>
   }
@@ -156,10 +156,16 @@ function FilesBlock({ state, t }: { state: DetailState | undefined; t: Translate
   return (
     <div className="dshgit-log-files">
       {files.map((file) => (
-        <div className="dshgit-log-file" key={file.path}>
+        <button
+          type="button"
+          className="dshgit-log-file"
+          key={file.path}
+          title={t('viewAtCommit') + ' · ' + file.path}
+          onClick={() => onOpenFile(state.data.hash, file.path)}
+        >
           <span className={`dshgit-file-status dshgit-file-status-${file.status}`}>{file.status}</span>
           <span className="dshgit-path" title={file.path}>{basename(file.path)}</span>
-        </div>
+        </button>
       ))}
     </div>
   )
@@ -179,6 +185,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
   const [hover, setHover] = useState<{ hash: string; rowTop: number; right: number } | null>(null)
   const [hoverTop, setHoverTop] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [viewer, setViewer] = useState<{ hash: string; path: string; loading: boolean; content?: string; error?: string; binary?: boolean } | null>(null)
 
   const cursorRef = useRef<GraphCursor>(createCursor())
   const commitsRef = useRef<GitLogCommit[]>([])
@@ -191,6 +198,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
   const hoverTimer = useRef<number | undefined>(undefined)
   const inFlight = useRef(new Set<string>())
   const copiedTimer = useRef<number | undefined>(undefined)
+  const viewerSeq = useRef(0)
 
   const reset = useCallback(() => {
     cursorRef.current = createCursor()
@@ -337,6 +345,26 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
       inFlight.current.delete(hash)
     }
   }, [git, cwd, details])
+
+  const openAtCommit = useCallback((hash: string, path: string) => {
+    const seq = ++viewerSeq.current
+    setViewer({ hash, path, loading: true })
+    void git
+      .showFile(cwd, hash, path)
+      .then((result) => {
+        if (viewerSeq.current !== seq) return
+        setViewer((prev) => prev === null ? prev : { ...prev, loading: false, content: result.content, binary: result.binary })
+      })
+      .catch((err) => {
+        if (viewerSeq.current !== seq) return
+        setViewer((prev) => prev === null ? prev : { ...prev, loading: false, error: err instanceof Error ? err.message : String(err) })
+      })
+  }, [git, cwd])
+
+  const closeViewer = useCallback(() => {
+    viewerSeq.current++
+    setViewer(null)
+  }, [])
 
   const toggle = useCallback(() => {
     const next = !open
@@ -541,7 +569,7 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
                     ) : null}
                     {isExpanded ? (
                       <div style={{ position: 'absolute', top: ROW_H, left: textLeft, right: 0 }}>
-                        <FilesBlock state={details.get(commit.hash)} t={t} />
+                        <FilesBlock state={details.get(commit.hash)} t={t} onOpenFile={openAtCommit} />
                       </div>
                     ) : null}
                   </div>
@@ -584,6 +612,32 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
               </div>
             </>
           )}
+        </div>
+      ) : null}
+
+      {viewer !== null ? (
+        <div className="dshgit-viewer">
+          <div className="dshgit-viewer-head">
+            <span className="dshgit-viewer-title" title={viewer.path}>
+              {viewer.hash.slice(0, 7)} · {viewer.path}
+            </span>
+            <button type="button" className="dshgit-diff-close" title={t('close')} onClick={closeViewer}>
+              <span style={{ fontSize: 12 }}>✕</span>
+            </button>
+          </div>
+          <div className="dshgit-viewer-body">
+            {viewer.loading ? (
+              <div className="dshgit-diff-note">{t('loading')}</div>
+            ) : viewer.error ? (
+              <div className="dshgit-diff-note dshgit-diff-error">{viewer.error}</div>
+            ) : viewer.binary ? (
+              <div className="dshgit-diff-note">{t('viewerBinary')}</div>
+            ) : viewer.content === undefined ? (
+              <div className="dshgit-diff-note">{t('viewerTooLarge')}</div>
+            ) : (
+              <pre className="dshgit-viewer-pre">{viewer.content}</pre>
+            )}
+          </div>
         </div>
       ) : null}
     </div>

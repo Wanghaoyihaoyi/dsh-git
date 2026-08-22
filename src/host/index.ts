@@ -26,6 +26,15 @@ import { generateCommitMessage } from './commit-message.js'
 import { checkUpdateCached, updatePlugin } from './update.js'
 import { fsList, fsRead } from './fs.js'
 import { gitDiff } from './diff.js'
+import {
+  gitDiscard,
+  gitStashPush,
+  gitStashList,
+  gitStashApply,
+  gitStashDrop,
+  gitUndoCommit,
+  gitShowFile,
+} from './git-extra.js'
 
 export const name = 'dsh-git'
 export const inject = ['shell', 'llm', 'connection', 'agentDefaultModel']
@@ -193,11 +202,64 @@ async function dispatch(
       const staged = readStaged(payload)
       return gitDiff(ctx, cwd, rel, staged, signal)
     }
+    case GIT_RPC.discard: {
+      const rel = readRelPath(payload)
+      const untracked = readUntracked(payload)
+      await gitDiscard(ctx, cwd, rel, untracked, signal)
+      return gitStatus(ctx, cwd, signal)
+    }
+    case GIT_RPC.stashPush: {
+      const message = readMessageOptional(payload)
+      await gitStashPush(ctx, cwd, message, signal)
+      return gitStatus(ctx, cwd, signal)
+    }
+    case GIT_RPC.stashList:
+      return gitStashList(ctx, cwd, signal)
+    case GIT_RPC.stashApply: {
+      const index = readIndex(payload)
+      await gitStashApply(ctx, cwd, index, signal)
+      return gitStatus(ctx, cwd, signal)
+    }
+    case GIT_RPC.stashDrop: {
+      const index = readIndex(payload)
+      await gitStashDrop(ctx, cwd, index, signal)
+      return gitStashList(ctx, cwd, signal)
+    }
+    case GIT_RPC.undoCommit:
+      await gitUndoCommit(ctx, cwd, signal)
+      return gitStatus(ctx, cwd, signal)
+    case GIT_RPC.showFile: {
+      const hash = readHash(payload)
+      const rel = readRelPath(payload)
+      return gitShowFile(ctx, cwd, hash, rel, signal)
+    }
     case GIT_RPC.generateMessageStart:
       return gitGenerateStart(ctx, cwd, config)
     default:
       throw new Error(`unknown git endpoint: ${endpoint}`)
   }
+}
+
+function readUntracked(payload: unknown): boolean {
+  const untracked = (payload as { untracked?: unknown } | null | undefined)?.untracked
+  if (untracked === undefined) return false
+  if (typeof untracked !== 'boolean') throw new Error('untracked must be a boolean')
+  return untracked
+}
+
+function readIndex(payload: unknown): number {
+  const index = (payload as { index?: unknown } | null | undefined)?.index
+  if (typeof index !== 'number' || !Number.isSafeInteger(index) || index < 0) {
+    throw new Error('index must be a non-negative integer')
+  }
+  return index
+}
+
+function readMessageOptional(payload: unknown): string | undefined {
+  const message = (payload as { message?: unknown } | null | undefined)?.message
+  if (message === undefined) return undefined
+  if (typeof message !== 'string') throw new Error('message must be a string')
+  return message
 }
 
 function readPath(payload: unknown): string {

@@ -37,6 +37,22 @@ const GIT_ENV: Record<string, string> = {
 
 const STDOUT_CAP = 1024 * 1024 // 1 MiB is ample for status/diff parsing.
 
+/**
+ * Join argv into a shell command, quoting each argument so spaces and shell
+ * metacharacters in user values cannot split into extra tokens or inject
+ * syntax. Safe arguments (path-ish tokens) stay bare; everything else is
+ * wrapped in single quotes with the standard embedded-quote escape.
+ */
+export function joinGitArgs(args: string[]): string {
+  return args.map((arg) => quoteIfNeeded(arg)).join(' ')
+}
+
+function quoteIfNeeded(arg: string): string {
+  if (/^[A-Za-z0-9._/:@~%+,-{}]+$/.test(arg)) return arg
+  const escaped = arg.split(String.fromCharCode(39)).join(String.fromCharCode(39) + '\\' + String.fromCharCode(39) + String.fromCharCode(39))
+  return String.fromCharCode(39) + escaped + String.fromCharCode(39)
+}
+
 export async function git(
   shell: ShellExecutor,
   args: string[],
@@ -44,7 +60,7 @@ export async function git(
 ): Promise<ShellRunResult> {
   return shell.run(
     shell.resolve({
-      command: ['git', ...args].join(' '),
+      command: joinGitArgs(['git', ...args]),
       workdir: opts.cwd,
       signal: opts.signal,
       stdin: opts.stdin,

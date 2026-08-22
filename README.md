@@ -14,6 +14,9 @@ A VS Code–like **Git Source Control panel** for the [DeepSeek Harness](https:/
 - **Git-semantic action button** — "Commit" when there are uncommitted changes (auto-stages if nothing is staged), "Push" when the branch tracks a remote and is ahead, "Publish branch" when the branch has no upstream but has local commits.
 - **Pull** — one click to fetch the latest from all remotes and branches (`git fetch --all --prune`); shown only when a remote is configured.
 - **Branch management** — list / switch / create / delete (with confirmation).
+- **Discard & stash** — one-click discard of a file's changes (tracked restores to HEAD, untracked deletes the file, confirmation before each), stash push/list/apply/drop in a dedicated menu.
+- **Undo last commit** — soft reset keeping all changes in the worktree.
+- **File at commit** — click a changed file in the history to view its content at that commit.
 - **Remote management** — the remote pill opens a management menu: fetch URL with one-click copy, retarget the URL (git remote set-url, the common case), and a clearly-separated danger action for removal (confirmation kept).
 - **AI commit messages** — streaming, Conventional Commits, generated from the staged/working diff via the harness LLM (Chinese output by default).
 - **Commit-history graph** — a lazily-paged SVG lane graph of all branches + remotes (lane topology computed client-side, rounded bends, soft palette), expanded by default at the bottom of the panel to half the panel height, virtual-scrolls and loads the next page as you scroll, expands a commit inline to its changed files, and shows a hover popover with message / author / date / hash (full hash copyable). Commit refs are tinted per kind: branch / tag / remote / HEAD.

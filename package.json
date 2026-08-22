@@ -1,7 +1,7 @@
 {
   "name": "@wanghaoyihaoyi/dsh-git",
   "version": "0.3.0",
-  "author": "陈佳宝 <mail@chenjiabao.com>",
+  "author": "Wanghaoyihaoyi",
   "description": "Git source-control sidebar for the DeepSeek Harness web UI: repo init, staging, commit/push/pull, branch & remote management, AI-generated Conventional Commits messages, and a commit-history graph.",
   "type": "module",
   "main": "lib/index.js",
@@ -25,7 +25,6 @@
     "type": "git",
     "url": "https://github.com/Wanghaoyihaoyi/dsh-git"
   },
-  "author": "Wanghaoyihaoyi",
   "keywords": [
     "dsh",
     "deepseek-harness",
@@ -50,40 +49,40 @@
     }
   },
   "peerDependencies": {
-    "react": "^18.2.0",
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-shell": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-agent-default-model": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-connection": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-host-apiproxy": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-locale": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-layout": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-sidebar": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6",
-    "@deepseek-ai/schemastery": "^3.18.1"
+    "@deepseek-ai/dsh-host-apiproxy": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-shell": "^0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "^3.18.1",
+    "react": "^18.2.0"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0",
-    "typescript": "^5.7.3",
-    "@types/node": "^24.0.0",
-    "@types/react": "^18.3.18",
-    "react": "^18.3.1",
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-shell": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-agent-default-model": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-connection": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-host-apiproxy": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-locale": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-layout": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-sidebar": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-client-ui-primitives": "^0.1.0-rc.6",
-    "@deepseek-ai/schemastery": "^3.18.1"
+    "@deepseek-ai/dsh-host-apiproxy": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-shell": "^0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "^3.18.1",
+    "@types/node": "^24.0.0",
+    "@types/react": "^18.3.18",
+    "esbuild": "^0.25.0",
+    "react": "^18.3.1",
+    "typescript": "^5.9.3"
   },
   "scripts": {
     "build": "node build.mjs",
