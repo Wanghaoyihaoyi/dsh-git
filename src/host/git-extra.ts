@@ -181,3 +181,17 @@ export async function gitDiffRef(
   const all = result.stdout?.text ?? ''
   return all.length > SHOW_CAP ? { diff: all.slice(0, SHOW_CAP), truncated: true } : { diff: all, truncated: false }
 }
+
+/** Revert a commit: add a new commit that reverses it (history is preserved). */
+export async function gitRevert(
+  ctx: Context,
+  cwd: string,
+  hash: string,
+  signal: AbortSignal,
+): Promise<void> {
+  if (!/^[0-9a-fA-F]{4,64}$/.test(hash)) throw new Error('invalid commit hash')
+  // `--no-edit` keeps the auto "Revert \"...\"" message; the commit is created
+  // immediately. A dirty worktree can make revert touch the same files and
+  // fail — surface git's message so the user knows to commit/stash first.
+  await gitOrThrow(ctx.shell, ['revert', '--no-edit', hash], { cwd, signal })
+}

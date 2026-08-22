@@ -96,6 +96,9 @@ export type GitKey =
   | 'compareRefPlaceholder'
   | 'filesChanged'
   | 'noDiff'
+  | 'revert'
+  | 'revertCommitConfirm'
+  | 'searchChanges'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -194,6 +197,9 @@ export const gitZh: LocaleDictOf<'git'> = {
   compareRefPlaceholder: '分支名 / 标签名，如 main',
   filesChanged: '个文件改动',
   noDiff: '两侧无差异',
+  revert: '回滚此提交',
+  revertCommitConfirm: '确定回滚提交 {hash} 吗？将生成一个反向提交（历史不丢失）。',
+  searchChanges: '搜索更改文件…',
 }
 
 export const gitEn: LocaleDictOf<'git'> = {
@@ -287,4 +293,7 @@ export const gitEn: LocaleDictOf<'git'> = {
   compareRefPlaceholder: 'Branch/tag name, e.g. main',
   filesChanged: 'files changed',
   noDiff: 'No difference between the two',
+  revert: 'Revert this commit',
+  revertCommitConfirm: 'Revert commit {hash}? A reverse commit will be created (history is preserved).',
+  searchChanges: 'Search changed files…',
 }

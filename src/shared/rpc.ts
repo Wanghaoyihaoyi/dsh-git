@@ -41,6 +41,7 @@ export const GIT_RPC = {
   conflictResolve: 'git/conflictResolve',
   branchCompare: 'git/branchCompare',
   diffRef: 'git/diffRef',
+  revert: 'git/revert',
 } as const
 
 export type GitEndpoint = (typeof GIT_RPC)[keyof typeof GIT_RPC]
@@ -314,4 +315,9 @@ export interface DiffRefRequest extends GitRpcRequest {
   /** Base ref. */
   ref: string
   path: string
+}
+
+export interface RevertRequest extends GitRpcRequest {
+  /** Commit hash to revert. */
+  hash: string
 }

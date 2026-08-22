@@ -48,6 +48,7 @@ export interface CommitGraphProps {
   git: GitApi
   cwd: string
   onError: (message: string | null) => void
+  onRevert: (hash: string) => void
   t: TranslateNS<'git'>
 }
 
@@ -171,7 +172,7 @@ function FilesBlock({ state, t, onOpenFile }: { state: DetailState | undefined; 
   )
 }
 
-export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
+export function CommitGraph({ git, cwd, onError, onRevert, t }: CommitGraphProps) {
   const [open, setOpen] = useState(true)
   const [rows, setRows] = useState<GraphRow[]>([])
   const [maxCol, setMaxCol] = useState(0)
@@ -608,6 +609,18 @@ export function CommitGraph({ git, cwd, onError, t }: CommitGraphProps) {
                   onClick={() => copyHash(hoverDetail.data.hash)}
                 >
                   {copied ? <span className="dshgit-hover-copied">{t('copied')}</span> : <CopyIcon size={14} />}
+                </button>
+              </div>
+              <div className="dshgit-hover-actions">
+                <button
+                  type="button"
+                  className="dshgit-hover-revert"
+                  onClick={() => {
+                    setHover(null)
+                    onRevert(hoverDetail.data.hash)
+                  }}
+                >
+                  {t('revert')}
                 </button>
               </div>
             </>

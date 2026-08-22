@@ -90,6 +90,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const [compareFile, setCompareFile] = useState<{ path: string; diff: string; truncated: boolean } | null>(null)
   const [stashes, setStashes] = useState<GitStash[]>([])
   const [stashMessage, setStashMessage] = useState('')
+  const [fileFilter, setFileFilter] = useState('')
   const [remoteUrl, setRemoteUrl] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<{ kind: 'branch' | 'remote'; name: string } | null>(null)
   const branchAnchorRef = useRef<HTMLButtonElement>(null)
@@ -373,6 +374,20 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
     [git, cwd, busy, t, diffTarget],
   )
 
+  const handleRevert = useCallback(async (hash: string) => {
+    if (!cwd || busy) return
+    if (!window.confirm(t('revertCommitConfirm', { hash: hash.slice(0, 7) }))) return
+    setBusy(t('revert'))
+    setError(null)
+    try {
+      setStatus(await git.revert(cwd, hash))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(null)
+    }
+  }, [git, cwd, busy, t])
+
   const handleCompare = useCallback(async (ref: string) => {
     if (!cwd || busy) return
     setBusy(t('compare'))
@@ -435,6 +450,13 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const hasChanges = stagedCount > 0 || (status?.unstaged.length ?? 0) > 0
   const untrackedFiles = (status?.unstaged ?? []).filter((f) => f.worktree === '?')
   const modifiedFiles = (status?.unstaged ?? []).filter((f) => f.worktree !== '?')
+  // File filter: lowercase substring match against the repo-relative path.
+  const needle = fileFilter.trim().toLowerCase()
+  const matchFilter = (path: string): boolean => needle === '' || path.toLowerCase().includes(needle)
+  const filteredStaged = (status?.staged ?? []).filter((f) => matchFilter(f.path))
+  const filteredUntracked = untrackedFiles.filter((f) => matchFilter(f.path))
+  const filteredModified = modifiedFiles.filter((f) => matchFilter(f.path))
+  const filteredConflicted = (status?.conflicted ?? []).filter((f) => matchFilter(f.path))
   const hasUpstream = status?.upstream !== undefined
   // Uncommitted changes always win: commit them first. Otherwise, with a remote
   // configured, offer push (tracked branch, ahead > 0) or publish (untracked
@@ -632,6 +654,25 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               </button>
               <span className="dshgit-spacer" />
             </div>
+            <div className="dshgit-search-box">
+              <input
+                className="dshgit-search"
+                value={fileFilter}
+                placeholder={t('searchChanges')}
+                spellCheck={false}
+                onChange={(event) => setFileFilter(event.target.value)}
+              />
+              {fileFilter !== '' ? (
+                <button
+                  type="button"
+                  className="dshgit-search-clear"
+                  title={t('close')}
+                  onClick={() => setFileFilter('')}
+                >
+                  <span style={{ fontSize: 12 }}>✕</span>
+                </button>
+              ) : null}
+            </div>
             <div className="dshgit-input-box">
               <input
                 className="dshgit-input"
@@ -725,7 +766,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               </div>
               {conflictedOpen ? (
                 <div className="dshgit-group-body">
-                {status.conflicted.map((file) => (
+                {filteredConflicted.map((file) => (
                   <div
                     className={'dshgit-row dshgit-row-clickable dshgit-row-conflict' + (diffTarget?.path === file.path ? ' dshgit-row-active' : '')}
                     key={`conflict:${file.path}`}
@@ -781,7 +822,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               </div>
               {stagedOpen ? (
                 <div className="dshgit-group-body">
-                {status.staged.map((file) => (
+                {filteredStaged.map((file) => (
                   <div
                     className={'dshgit-row dshgit-row-clickable' + (diffTarget?.path === file.path && diffTarget.staged ? ' dshgit-row-active' : '')}
                     key={`staged:${file.path}`}
@@ -826,7 +867,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               </div>
               {unstagedOpen ? (
                 <div className="dshgit-group-body">
-                {modifiedFiles.map((file) => (
+                {filteredModified.map((file) => (
                   <div
                     className={'dshgit-row dshgit-row-clickable' + (diffTarget?.path === file.path && !diffTarget.staged ? ' dshgit-row-active' : '')}
                     key={`modified:${file.path}`}
@@ -859,10 +900,10 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                     </button>
                   </div>
                 ))}
-                {untrackedFiles.length > 0 ? (
-                  <div className="dshgit-subhead">{t('untracked')} ({untrackedFiles.length})</div>
+                {filteredUntracked.length > 0 ? (
+                  <div className="dshgit-subhead">{t('untracked')} ({filteredUntracked.length})</div>
                 ) : null}
-                {untrackedFiles.map((file) => (
+                {filteredUntracked.map((file) => (
                   <div
                     className={'dshgit-row dshgit-row-clickable dshgit-row-untracked' + (diffTarget?.path === file.path && !diffTarget.staged ? ' dshgit-row-active' : '')}
                     key={`untracked:${file.path}`}
@@ -908,7 +949,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
               onClose={() => setDiffTarget(null)}
               t={t}
             />
-            <CommitGraph git={git} cwd={cwd} onError={setError} t={t} />
+            <CommitGraph git={git} cwd={cwd} onError={setError} onRevert={handleRevert} t={t} />
           </div>
         )}
 

@@ -20,6 +20,8 @@ A VS Code–like **Git Source Control panel** for the [DeepSeek Harness](https:/
 - **Merge conflicts** — conflicted files get their own section with "keep ours"/"keep theirs" one-click resolution (staged on resolve).
 - **Branch compare** — compare HEAD against any branch/tag: ahead/behind counts, changed-file list, and per-file diff against the base.
 - **Diff stats** — the diff header shows +N −M line counts.
+- **Revert a commit** — from the history hover card, create a reverse commit (history preserved).
+- **Change search** — filter the staged/changes/untracked/conflict lists by path substring.
 - **Remote management** — the remote pill opens a management menu: fetch URL with one-click copy, retarget the URL (git remote set-url, the common case), and a clearly-separated danger action for removal (confirmation kept).
 - **AI commit messages** — streaming, Conventional Commits, generated from the staged/working diff via the harness LLM (Chinese output by default).
 - **Commit-history graph** — a lazily-paged SVG lane graph of all branches + remotes (lane topology computed client-side, rounded bends, soft palette), expanded by default at the bottom of the panel to half the panel height, virtual-scrolls and loads the next page as you scroll, expands a commit inline to its changed files, and shows a hover popover with message / author / date / hash (full hash copyable). Commit refs are tinted per kind: branch / tag / remote / HEAD.

@@ -61,6 +61,7 @@ export interface GitApi {
   conflictResolve(cwd: string, path: string, resolution: ConflictResolution, signal?: AbortSignal): Promise<GitStatus>
   branchCompare(cwd: string, ref: string, signal?: AbortSignal): Promise<GitBranchCompare>
   diffRef(cwd: string, ref: string, path: string, signal?: AbortSignal): Promise<{ diff: string; truncated: boolean }>
+  revert(cwd: string, hash: string, signal?: AbortSignal): Promise<GitStatus>
 }
 
 type Caller = (
@@ -114,5 +115,6 @@ export function createGitApi(call: Caller): GitApi {
     conflictResolve: (cwd, path, resolution, signal) => unwrap(call, GIT_RPC.conflictResolve, { cwd, path, resolution }, signal),
     branchCompare: (cwd, ref, signal) => unwrap(call, GIT_RPC.branchCompare, { cwd, ref }, signal),
     diffRef: (cwd, ref, path, signal) => unwrap(call, GIT_RPC.diffRef, { cwd, ref, path }, signal),
+    revert: (cwd, hash, signal) => unwrap(call, GIT_RPC.revert, { cwd, hash }, signal),
   }
 }

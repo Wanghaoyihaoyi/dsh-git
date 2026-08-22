@@ -175,6 +175,14 @@ export const PANEL_CSS = `
 .dshgit-hover-copied{font-size:12px;color:var(--dsw-alias-state-business-primary)}
 .dshgit-hover-note{color:var(--dsw-alias-label-secondary)}
 .dshgit-hover-error{color:var(--dsw-alias-state-error-primary)}
+.dshgit-hover-actions{display:flex;align-items:center;gap:6px;padding-top:2px}
+.dshgit-hover-revert{flex:none;border:none;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);cursor:pointer;padding:3px 8px;border-radius:5px;font-size:12px;font-family:inherit}
+.dshgit-hover-revert:hover{background:var(--dsw-alias-interactive-bg-hover-danger);color:var(--dsw-alias-state-error-primary)}
+.dshgit-search-box{flex:none;display:flex;align-items:center;height:32px;box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;overflow:hidden;background:var(--dsw-alias-interactive-bg-hover)}
+.dshgit-search{flex:1;min-width:0;height:30px;box-sizing:border-box;margin:0;padding:0 10px;border:none;outline:none;background:transparent;color:var(--dsw-alias-label-primary);font-size:13px;font-family:inherit}
+.dshgit-search::placeholder{color:var(--dsw-alias-label-secondary)}
+.dshgit-search-clear{flex:none;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;border-radius:6px}
+.dshgit-search-clear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .dshgit-foot-update{flex:none;display:inline-flex;align-items:center;color:var(--dsw-alias-state-business-primary)}
 .dshgit-update-link{flex:none;border:none;background:transparent;color:var(--dsw-alias-state-business-primary);cursor:pointer;padding:0;font-size:13px;line-height:16px;font-family:inherit}
 .dshgit-update-link:hover{text-decoration:underline}

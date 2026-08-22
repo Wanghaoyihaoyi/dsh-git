@@ -37,6 +37,7 @@ import {
   gitConflictResolve,
   gitBranchCompare,
   gitDiffRef,
+  gitRevert,
 } from './git-extra.js'
 
 export const name = 'dsh-git'
@@ -250,6 +251,11 @@ async function dispatch(
       const ref = readRef(payload)
       const rel = readRelPath(payload)
       return gitDiffRef(ctx, cwd, ref, rel, signal)
+    }
+    case GIT_RPC.revert: {
+      const hash = readHash(payload)
+      await gitRevert(ctx, cwd, hash, signal)
+      return gitStatus(ctx, cwd, signal)
     }
     case GIT_RPC.generateMessageStart:
       return gitGenerateStart(ctx, cwd, config)
