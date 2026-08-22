@@ -126,6 +126,7 @@ npm publish --registry=https://registry.npmjs.org
 
 ## 发布记录
 
+- **0.4.0**（2026-08）——新增合并冲突解决（保留我方 / 保留对方）、分支对比（超前/落后计数 + 单文件 diff）、diff 统计（+N −M）、历史提交一键回滚、更改列表搜索/过滤；并修复 New Session 场景的系列 UI 问题（无真实会话时隐藏面板、侧栏开关、完整 git 信息、面板自动收起）。
 - **0.3.0**（2026-08）——以 `@wanghaoyihaoyi/dsh-git` 名义重新发布（维护者：Wanghaoyihaoyi；MIT，双版权 陈佳宝 + Wanghaoyihaoyi）。Fork 自 `@mojiexuan/dsh-git`，新增工作区文件浏览器、单文件 diff 预览、Git/文件 双 tab 面板与远程管理菜单。
 
 ## 许可证

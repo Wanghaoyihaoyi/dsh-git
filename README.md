@@ -128,6 +128,7 @@ Tag the GitHub repo with [`dsh-plugin`](https://github.com/topics/dsh-plugin).
 
 ## Release log
 
+- **0.4.0** (2026-08) — merge-conflict resolution (keep ours/theirs), branch compare with ahead/behind counts and per-file diffs, diff stats (+N −M), revert a commit from history, change-list search/filter, plus New Session UI fixes (panel hidden until a real session, working sidebar toggle, full git info, auto-collapse).
 - **0.3.0** (2026-08) — republished as `@wanghaoyihaoyi/dsh-git` (maintainer: Wanghaoyihaoyi; MIT, dual copyright 陈佳宝 + Wanghaoyihaoyi). Fork of `@mojiexuan/dsh-git` with the workspace file browser, one-file diff previews, tabbed Git/Files panel, and remote management menu.
 
 ## License

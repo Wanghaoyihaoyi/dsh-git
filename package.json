@@ -1,6 +1,6 @@
 {
   "name": "@wanghaoyihaoyi/dsh-git",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": "Wanghaoyihaoyi",
   "description": "Git source-control sidebar for the DeepSeek Harness web UI: repo init, staging, commit/push/pull, branch & remote management, AI-generated Conventional Commits messages, and a commit-history graph.",
   "type": "module",
