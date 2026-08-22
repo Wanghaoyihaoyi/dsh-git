@@ -59,8 +59,13 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   // The floating overlay stands in when: the viewport is narrow, OR there is no
   // non-blank session (details column unavailable), OR the details column is
   // actually closed (its close breakpoint depends on the live sidebar width).
-  const visible = open && (mode === 'floating'
-    ? (isNarrow || !hasDetailsSession || !detailsOpen)
+  // No non-blank session (New Session / blank view): never show the panel —
+  // the git panel belongs to a workspace-backed conversation, not to the
+  // welcome screen. With a session, docked shows when the details column is
+  // open; floating stands in only when that column is closed (narrow viewport
+  // or the layout auto-closed it).
+  const visible = open && hasDetailsSession && (mode === 'floating'
+    ? (isNarrow || !detailsOpen)
     : !isNarrow)
   const rootRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<GitStatus | null>(null)
