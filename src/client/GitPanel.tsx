@@ -56,15 +56,12 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
     const current = state.current
     return current !== undefined && state.byId[current]?.blank === false
   })
-  // The floating overlay stands in when: the viewport is narrow, OR there is no
-  // non-blank session (details column unavailable), OR the details column is
-  // actually closed (its close breakpoint depends on the live sidebar width).
-  // Panel visibility follows the toggle (open) exactly: in any session,
-  // docked shows when not narrow, floating stands in when narrow. The
-  // empty-session case is handled by the CONTENT below (a hint panel instead
-  // of a postage-stamp git view), never by hiding the panel — otherwise the
-  // sidebar toggle would look broken on New Session.
-  const visible = open && (mode === 'floating'
+  // No non-blank session (New Session / blank view): never render the panel.
+  // The host layout gives the details column 0 width there, so any showing
+  // would be a floating overlay covering the conversation instead of a docked
+  // column — with a session, docked shows when not narrow, floating stands in
+  // when narrow or when the layout auto-closed the details column.
+  const visible = open && hasDetailsSession && (mode === 'floating'
     ? (isNarrow || !detailsOpen)
     : !isNarrow)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -111,19 +108,25 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
     return (recent ?? items[0]).path
   }, [currentCwd, workspaces])
 
-  // The layout auto-closes the details column on session change (its own
-  // useLayoutEffect); the git panel is workspace-scoped, so re-open it to keep
-  // the toggle state and the column in sync (avoids the "two clicks" stuck state).
+  // Session-change behavior:
+  //  - switching to a blank session (New Session): auto-close the panel and
+  //    remember it was open, so it comes back when the user lands on a real
+  //    session again;
+  //  - switching between real sessions: re-open (the layout auto-closes the
+  //    details column on session change of its own, so sync the toggle back).
   const currentSessionId = useSessions((state) => state.current)
   useEffect(() => {
     if (mode !== 'docked') return
     const last = panelStore.getLastSessionId()
     panelStore.setLastSessionId(currentSessionId)
-    // Re-open only when switching between REAL sessions (the layout auto-closes
-    // the details column on session change of its own). Never force-open the
-    // column for a blank session — the panel content handles that state.
-    if (last !== undefined && last !== currentSessionId && panelStore.isOpen() && hasDetailsSession) {
-      openGit()
+    if (last === undefined || last === currentSessionId) return
+    if (hasDetailsSession) {
+      if (panelStore.isOpen()) openGit()
+    } else {
+      // Blank session: close the panel (the host gives details 0 width, so
+      // anything shown would cover the conversation). Remember the intent so
+      // the panel returns on the next real session.
+      panelStore.setOpen(false)
     }
   }, [currentSessionId, mode, openGit, hasDetailsSession])
 
