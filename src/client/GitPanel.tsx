@@ -59,12 +59,12 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   // The floating overlay stands in when: the viewport is narrow, OR there is no
   // non-blank session (details column unavailable), OR the details column is
   // actually closed (its close breakpoint depends on the live sidebar width).
-  // No non-blank session (New Session / blank view): never show the panel —
-  // the git panel belongs to a workspace-backed conversation, not to the
-  // welcome screen. With a session, docked shows when the details column is
-  // open; floating stands in only when that column is closed (narrow viewport
-  // or the layout auto-closed it).
-  const visible = open && hasDetailsSession && (mode === 'floating'
+  // Panel visibility follows the toggle (open) exactly: in any session,
+  // docked shows when not narrow, floating stands in when narrow. The
+  // empty-session case is handled by the CONTENT below (a hint panel instead
+  // of a postage-stamp git view), never by hiding the panel — otherwise the
+  // sidebar toggle would look broken on New Session.
+  const visible = open && (mode === 'floating'
     ? (isNarrow || !detailsOpen)
     : !isNarrow)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -119,10 +119,13 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
     if (mode !== 'docked') return
     const last = panelStore.getLastSessionId()
     panelStore.setLastSessionId(currentSessionId)
-    if (last !== undefined && last !== currentSessionId && panelStore.isOpen()) {
+    // Re-open only when switching between REAL sessions (the layout auto-closes
+    // the details column on session change of its own). Never force-open the
+    // column for a blank session — the panel content handles that state.
+    if (last !== undefined && last !== currentSessionId && panelStore.isOpen() && hasDetailsSession) {
       openGit()
     }
-  }, [currentSessionId, mode, openGit])
+  }, [currentSessionId, mode, openGit, hasDetailsSession])
 
   // Track the docked column's ACTUAL width so the floating panel can stand in
   // whenever the layout closes it. The layout's close breakpoint is
@@ -588,7 +591,11 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
           </button>
         </div>
 
-        {!cwd ? (
+        {!hasDetailsSession ? (
+          <div className="dshgit-empty">
+            <div>{t('emptySessionHint')}</div>
+          </div>
+        ) : !cwd ? (
           <div className="dshgit-empty">{t('noWorkspaceOpened')}</div>
         ) : view === 'files' ? (
           <div className="dshgit-body dshgit-body-files">

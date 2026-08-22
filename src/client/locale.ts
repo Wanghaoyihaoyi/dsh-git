@@ -99,6 +99,7 @@ export type GitKey =
   | 'revert'
   | 'revertCommitConfirm'
   | 'searchChanges'
+  | 'emptySessionHint'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -200,6 +201,7 @@ export const gitZh: LocaleDictOf<'git'> = {
   revert: '回滚此提交',
   revertCommitConfirm: '确定回滚提交 {hash} 吗？将生成一个反向提交（历史不丢失）。',
   searchChanges: '搜索更改文件…',
+  emptySessionHint: '新建对话完成并选择工作区后,这里将显示 Git 信息。',
 }
 
 export const gitEn: LocaleDictOf<'git'> = {
@@ -296,4 +298,5 @@ export const gitEn: LocaleDictOf<'git'> = {
   revert: 'Revert this commit',
   revertCommitConfirm: 'Revert commit {hash}? A reverse commit will be created (history is preserved).',
   searchChanges: 'Search changed files…',
+  emptySessionHint: 'Start a new conversation and pick a workspace to see Git info here.',
 }
