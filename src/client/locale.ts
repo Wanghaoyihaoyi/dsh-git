@@ -88,6 +88,14 @@ export type GitKey =
   | 'viewAtCommit'
   | 'viewerBinary'
   | 'viewerTooLarge'
+  | 'conflicts'
+  | 'conflictOurs'
+  | 'conflictTheirs'
+  | 'compare'
+  | 'compareHint'
+  | 'compareRefPlaceholder'
+  | 'filesChanged'
+  | 'noDiff'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -178,6 +186,14 @@ export const gitZh: LocaleDictOf<'git'> = {
   viewAtCommit: '查看此提交中的内容',
   viewerBinary: '二进制文件，无法预览',
   viewerTooLarge: '文件过大，无法预览',
+  conflicts: '合并冲突',
+  conflictOurs: '保留我方',
+  conflictTheirs: '保留对方',
+  compare: '分支对比',
+  compareHint: '与某个分支或标签对比',
+  compareRefPlaceholder: '分支名 / 标签名，如 main',
+  filesChanged: '个文件改动',
+  noDiff: '两侧无差异',
 }
 
 export const gitEn: LocaleDictOf<'git'> = {
@@ -263,4 +279,12 @@ export const gitEn: LocaleDictOf<'git'> = {
   viewAtCommit: 'View content at this commit',
   viewerBinary: 'Binary file; preview unavailable',
   viewerTooLarge: 'File too large to preview',
+  conflicts: 'Merge conflicts',
+  conflictOurs: 'Keep ours',
+  conflictTheirs: 'Keep theirs',
+  compare: 'Compare branches',
+  compareHint: 'Compare against a branch or tag',
+  compareRefPlaceholder: 'Branch/tag name, e.g. main',
+  filesChanged: 'files changed',
+  noDiff: 'No difference between the two',
 }

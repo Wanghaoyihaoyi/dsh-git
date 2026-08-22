@@ -6,14 +6,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Button, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { GlobalStandardProps, TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
-import type { GitBranch, GitRemote, GitStash, GitStatus } from '../shared/rpc.js'
+import type { GitBranch, GitBranchCompare, GitRemote, GitStash, GitStatus } from '../shared/rpc.js'
 import type { GitApi } from './rpc.js'
 import { panelStore } from './panelStore.js'
 import { useIsNarrow } from './useIsNarrow.js'
 import { BranchMenu } from './BranchMenu.js'
 import { CommitGraph } from './CommitGraph.js'
 import { FileBrowser } from './FileBrowser.js'
-import { DiffView } from './DiffView.js'
+import { DiffView, lineClass } from './DiffView.js'
 import { RemoteMenu } from './RemoteMenu.js'
 import { fileIcon } from './fileIcons.js'
 import {
@@ -26,6 +26,7 @@ import {
   UndoIcon,
   StashIcon,
   TrashIcon,
+  CompareIcon,
 } from './icons.js'
 
 function basename(path: string): string {
@@ -77,6 +78,11 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
   const [remoteModalOpen, setRemoteModalOpen] = useState(false)
   const [editUrlTarget, setEditUrlTarget] = useState<GitRemote | null>(null)
   const [stashMenuOpen, setStashMenuOpen] = useState(false)
+  const [conflictedOpen, setConflictedOpen] = useState(true)
+  const [compareOpen, setCompareOpen] = useState(false)
+  const [compareRef, setCompareRef] = useState('')
+  const [compareResult, setCompareResult] = useState<GitBranchCompare | null>(null)
+  const [compareFile, setCompareFile] = useState<{ path: string; diff: string; truncated: boolean } | null>(null)
   const [stashes, setStashes] = useState<GitStash[]>([])
   const [stashMessage, setStashMessage] = useState('')
   const [remoteUrl, setRemoteUrl] = useState('')
@@ -345,6 +351,45 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
     }
   }, [git, cwd, busy, t])
 
+  const handleConflictResolve = useCallback(
+    async (path: string, resolution: 'ours' | 'theirs') => {
+      if (!cwd || busy) return
+      setBusy(resolution === 'ours' ? t('conflictOurs') : t('conflictTheirs'))
+      setError(null)
+      try {
+        setStatus(await git.conflictResolve(cwd, path, resolution))
+        if (diffTarget?.path === path) setDiffTarget(null)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err))
+      } finally {
+        setBusy(null)
+      }
+    },
+    [git, cwd, busy, t, diffTarget],
+  )
+
+  const handleCompare = useCallback(async (ref: string) => {
+    if (!cwd || busy) return
+    setBusy(t('compare'))
+    setError(null)
+    try {
+      setCompareResult(await git.branchCompare(cwd, ref))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(null)
+    }
+  }, [git, cwd, busy, t])
+
+  const handleDiffRef = useCallback(async (ref: string, path: string) => {
+    if (!cwd) return
+    try {
+      setCompareFile({ path, ...(await git.diffRef(cwd, ref, path)) })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    }
+  }, [git, cwd])
+
   const handlePull = useCallback(async () => {
     if (!cwd || busy) return
     setBusy(t('pull'))
@@ -566,6 +611,20 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
                 <StashIcon size={14} />
                 <span>{t('stashPush')}</span>
               </button>
+              <button
+                type="button"
+                className="dshgit-tool"
+                title={t('compareHint')}
+                disabled={busy !== null || !status?.hasCommits}
+                onClick={() => {
+                  setCompareRef('')
+                  setCompareResult(null)
+                  setCompareOpen(true)
+                }}
+              >
+                <CompareIcon size={14} />
+                <span>{t('compare')}</span>
+              </button>
               <span className="dshgit-spacer" />
             </div>
             <div className="dshgit-input-box">
@@ -651,6 +710,52 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
             </Button>
 
             <div className="dshgit-lists">
+            {status.conflicted.length > 0 ? (
+            <div className="dshgit-group dshgit-group-conflict">
+              <div className="dshgit-group-head" onClick={() => setConflictedOpen((value) => !value)}>
+                <span style={{ fontSize: 10 }}>{conflictedOpen ? '▾' : '▸'}</span>
+                <span className="dshgit-conflict-label">{t('conflicts')}</span>
+                <span className="dshgit-count">{status.conflicted.length}</span>
+                <span className="dshgit-spacer" />
+              </div>
+              {conflictedOpen ? (
+                <div className="dshgit-group-body">
+                {status.conflicted.map((file) => (
+                  <div
+                    className={'dshgit-row dshgit-row-clickable dshgit-row-conflict' + (diffTarget?.path === file.path ? ' dshgit-row-active' : '')}
+                    key={`conflict:${file.path}`}
+                    onClick={() => setDiffTarget((prev) => (prev?.path === file.path ? null : { path: file.path, staged: false }))}
+                  >
+                    <span className="dshgit-conflict-badge">!</span>
+                    <span className="dshgit-path" title={file.path}>{basename(file.path)}</span>
+                    <button
+                      className="dshgit-ghost"
+                      title={t('conflictOurs')}
+                      disabled={busy !== null}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        void handleConflictResolve(file.path, 'ours')
+                      }}
+                    >
+                      {t('conflictOurs')}
+                    </button>
+                    <button
+                      className="dshgit-ghost"
+                      title={t('conflictTheirs')}
+                      disabled={busy !== null}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        void handleConflictResolve(file.path, 'theirs')
+                      }}
+                    >
+                      {t('conflictTheirs')}
+                    </button>
+                  </div>
+                ))}
+                </div>
+              ) : null}
+            </div>
+            ) : null}
             <div className="dshgit-group">
               <div className="dshgit-group-head" onClick={() => setStagedOpen((value) => !value)}>
                 <span style={{ fontSize: 10 }}>{stagedOpen ? '▾' : '▸'}</span>
@@ -937,6 +1042,74 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
             ))
           )}
         </div>
+      </Modal>
+
+      <Modal
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        title={t('compare')}
+        closeLabel={t('close')}
+        footer={
+          <>
+            <Button variant="ghost" size="md" onClick={() => setCompareOpen(false)}>{t('close')}</Button>
+            <Button variant="primary" size="md" disabled={busy !== null || compareRef.trim().length === 0} onClick={() => void handleCompare(compareRef.trim())}>{t('compare')}</Button>
+          </>
+        }
+      >
+        <input
+          className="dshgit-modal-input"
+          value={compareRef}
+          placeholder={t('compareRefPlaceholder')}
+          spellCheck={false}
+          onChange={(event) => setCompareRef(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && compareRef.trim().length > 0) void handleCompare(compareRef.trim())
+          }}
+        />
+        <div className="dshgit-rmenu-divider" />
+        {compareResult !== null ? (
+          <div className="dshgit-compare-result">
+            <div className="dshgit-compare-meta">
+              <span className="dshgit-compare-ahead">↑ {compareResult.ahead}</span>
+              <span className="dshgit-compare-behind">↓ {compareResult.behind}</span>
+              <span className="dshgit-compare-files">{compareResult.files.length} {t('filesChanged')}</span>
+            </div>
+            <div className="dshgit-stash-list" style={{ maxHeight: 240 }}>
+              {compareResult.files.length === 0 ? (
+                <div className="dshgit-stash-empty">{t('noDiff')}</div>
+              ) : (
+                compareResult.files.map((file) => (
+                  <div className="dshgit-stash-row" key={file.path}>
+                    <button
+                      type="button"
+                      className="dshgit-stash-apply"
+                      title={file.path}
+                      onClick={() => void handleDiffRef(compareRef.trim(), file.path)}
+                    >
+                      <span className={`dshgit-file-status dshgit-file-status-${file.status}`}>{file.status}</span>
+                      <span className="dshgit-stash-message">{file.path}</span>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            {compareFile !== null ? (
+              <>
+                <div className="dshgit-rmenu-divider" />
+                <div className="dshgit-diff-body" style={{ maxHeight: 200 }}>
+                  <div className="dshgit-diff-pre">
+                    {compareFile.diff.split('\n').map((line, i) => (
+                      <div key={i} className={lineClass(line) === undefined ? undefined : lineClass(line)}>
+                        <span className="dshgit-diff-line">{line || ' '}</span>
+                      </div>
+                    ))}
+                    {compareFile.truncated ? <div className="dshgit-diff-note">{t('diffTruncated')}</div> : null}
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
+        ) : null}
       </Modal>
 
       <Modal

@@ -123,3 +123,61 @@ export async function gitShowFile(
   if (binary) return { binary: true, tooLarge: false, size }
   return { content: text, binary: false, tooLarge: false, size }
 }
+
+/** Resolve one conflicted file: take ours/theirs, then stage it. */
+export async function gitConflictResolve(
+  ctx: Context,
+  cwd: string,
+  rel: string,
+  resolution: 'ours' | 'theirs',
+  signal: AbortSignal,
+): Promise<void> {
+  if (resolution !== 'ours' && resolution !== 'theirs') throw new Error('invalid resolution')
+  const target = safeResolve(path.resolve(cwd), rel)
+  if (target === undefined) throw new Error('path escapes the workspace')
+  // `git checkout --ours/--theirs -- <path>` copies the chosen side into the
+  // worktree AND index, clearing the conflict marker; then `git add` marks it
+  // resolved (a no-op for already-staged files but correct for deleted ones).
+  await gitOrThrow(ctx.shell, ['checkout', `--${resolution}`, '--', rel], { cwd, signal })
+  await gitOrThrow(ctx.shell, ['add', '--', rel], { cwd, signal })
+}
+
+/** Compare HEAD against a base ref: ahead/behind counts plus changed files. */
+export async function gitBranchCompare(
+  ctx: Context,
+  cwd: string,
+  ref: string,
+  signal: AbortSignal,
+): Promise<{ base: string; ahead: number; behind: number; files: { status: string; path: string }[] }> {
+  if (!/^[A-Za-z0-9._-]+$/.test(ref)) throw new Error('invalid ref')
+  const revList = await git(ctx.shell, ['rev-list', '--left-right', '--count', `${ref}...HEAD`], { cwd, signal })
+  if (revList.exitCode !== 0) {
+    throw new Error((revList.stderr?.text ?? 'compare failed').trim())
+  }
+  const [left, right] = stdoutText(revList).trim().split(/\s+/)
+  const ahead = Number(right ?? 0)
+  const behind = Number(left ?? 0)
+  const diff = await gitOrThrow(ctx.shell, ['diff', '--name-status', `${ref}...HEAD`], { cwd, signal })
+  const files: { status: string; path: string }[] = []
+  for (const line of stdoutText(diff).split('\n')) {
+    const m = /^([A-Z])\t(.+)$/.exec(line.trimEnd())
+    if (m) files.push({ status: m[1], path: m[2] })
+  }
+  return { base: ref, ahead, behind, files }
+}
+
+/** Unified diff of one path between a base ref and HEAD. */
+export async function gitDiffRef(
+  ctx: Context,
+  cwd: string,
+  ref: string,
+  rel: string,
+  signal: AbortSignal,
+): Promise<{ diff: string; truncated: boolean }> {
+  if (!/^[A-Za-z0-9._-]+$/.test(ref)) throw new Error('invalid ref')
+  const target = safeResolve(path.resolve(cwd), rel)
+  if (target === undefined) throw new Error('path escapes the workspace')
+  const result = await gitOrThrow(ctx.shell, ['diff', '--no-color', `${ref}...HEAD`, '--', rel], { cwd, signal })
+  const all = result.stdout?.text ?? ''
+  return all.length > SHOW_CAP ? { diff: all.slice(0, SHOW_CAP), truncated: true } : { diff: all, truncated: false }
+}

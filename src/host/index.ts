@@ -34,6 +34,9 @@ import {
   gitStashDrop,
   gitUndoCommit,
   gitShowFile,
+  gitConflictResolve,
+  gitBranchCompare,
+  gitDiffRef,
 } from './git-extra.js'
 
 export const name = 'dsh-git'
@@ -233,6 +236,21 @@ async function dispatch(
       const rel = readRelPath(payload)
       return gitShowFile(ctx, cwd, hash, rel, signal)
     }
+    case GIT_RPC.conflictResolve: {
+      const rel = readRelPath(payload)
+      const resolution = readResolution(payload)
+      await gitConflictResolve(ctx, cwd, rel, resolution, signal)
+      return gitStatus(ctx, cwd, signal)
+    }
+    case GIT_RPC.branchCompare: {
+      const ref = readRef(payload)
+      return gitBranchCompare(ctx, cwd, ref, signal)
+    }
+    case GIT_RPC.diffRef: {
+      const ref = readRef(payload)
+      const rel = readRelPath(payload)
+      return gitDiffRef(ctx, cwd, ref, rel, signal)
+    }
     case GIT_RPC.generateMessageStart:
       return gitGenerateStart(ctx, cwd, config)
     default:
@@ -253,6 +271,18 @@ function readIndex(payload: unknown): number {
     throw new Error('index must be a non-negative integer')
   }
   return index
+}
+
+function readResolution(payload: unknown): 'ours' | 'theirs' {
+  const resolution = (payload as { resolution?: unknown } | null | undefined)?.resolution
+  if (resolution !== 'ours' && resolution !== 'theirs') throw new Error('resolution must be ours or theirs')
+  return resolution
+}
+
+function readRef(payload: unknown): string {
+  const ref = (payload as { ref?: unknown } | null | undefined)?.ref
+  if (typeof ref !== 'string' || ref.trim().length === 0) throw new Error('ref is required')
+  return ref.trim()
 }
 
 function readMessageOptional(payload: unknown): string | undefined {
@@ -687,6 +717,7 @@ function parseStatus(output: string): GitStatus {
   let hasCommits = true
   const staged: GitStatus['staged'] = []
   const unstaged: GitStatus['unstaged'] = []
+  const conflicted: GitStatus['conflicted'] = []
 
   for (const line of lines) {
     if (line.startsWith('## ')) {
@@ -719,6 +750,12 @@ function parseStatus(output: string): GitStatus {
     if (arrow >= 0 && (x === 'R' || y === 'R' || x === 'C' || y === 'C')) {
       path = path.slice(arrow + 4)
     }
+    // Unmerged (conflicted) entries: index letter U (or both letters U) —
+    // keep them OUT of staged/unstaged so the conflicts get their own section.
+    if (x === 'U' || y === 'U') {
+      conflicted.push({ path, index: x, worktree: y })
+      continue
+    }
     // Index (staged) column: ' ' clean, '?' untracked (never staged); anything
     // else (M/A/D/R/C/…) is a staged change.
     if (x !== ' ' && x !== '?') staged.push({ path, index: x, worktree: y })
@@ -727,5 +764,5 @@ function parseStatus(output: string): GitStatus {
     if (y !== ' ') unstaged.push({ path, index: x, worktree: y })
   }
 
-  return { isRepo: true, branch, upstream, ahead, behind, hasCommits, unpublished: false, staged, unstaged }
+  return { isRepo: true, branch, upstream, ahead, behind, hasCommits, unpublished: false, staged, unstaged, conflicted }
 }

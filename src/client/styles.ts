@@ -228,4 +228,16 @@ export const PANEL_CSS = `
 .dshgit-diff-meta .dshgit-diff-line{color:var(--dsw-alias-label-secondary)}
 .dshgit-diff-note{padding:10px 12px;color:var(--dsw-alias-label-secondary);font-size:12px}
 .dshgit-diff-error{color:var(--dsw-alias-state-error-primary)}
+.dshgit-diff-stats{flex:none;display:inline-flex;align-items:center;gap:6px}
+.dshgit-diff-stat-add{color:#1f9d55;font-size:11px;font-weight:600}
+.dshgit-diff-stat-del{color:#e0554f;font-size:11px;font-weight:600}
+.dshgit-group-conflict .dshgit-group-head{color:var(--dsw-alias-state-error-primary)}
+.dshgit-conflict-label{font-weight:600}
+.dshgit-conflict-badge{flex:none;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;background:rgba(224,85,79,.18);color:var(--dsw-alias-state-error-primary);font-size:11px;font-weight:700}
+.dshgit-row-conflict .dshgit-path{color:var(--dsw-alias-state-error-primary)}
+.dshgit-compare-result{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.dshgit-compare-meta{display:flex;align-items:center;gap:12px;padding:4px 0}
+.dshgit-compare-ahead{color:#1f9d55;font-size:12px;font-weight:600}
+.dshgit-compare-behind{color:#e0554f;font-size:12px;font-weight:600}
+.dshgit-compare-files{color:var(--dsw-alias-label-secondary);font-size:12px}
 `

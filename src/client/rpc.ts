@@ -10,6 +10,8 @@ import {
   type GitDiffResult,
   type GitShowFileResult,
   type GitStash,
+  type GitBranchCompare,
+  type ConflictResolution,
   type GitBranch,
   type GitCommitDetail,
   type GitLogPage,
@@ -56,6 +58,9 @@ export interface GitApi {
   stashDrop(cwd: string, index: number, signal?: AbortSignal): Promise<GitStash[]>
   undoCommit(cwd: string, signal?: AbortSignal): Promise<GitStatus>
   showFile(cwd: string, hash: string, path: string, signal?: AbortSignal): Promise<GitShowFileResult>
+  conflictResolve(cwd: string, path: string, resolution: ConflictResolution, signal?: AbortSignal): Promise<GitStatus>
+  branchCompare(cwd: string, ref: string, signal?: AbortSignal): Promise<GitBranchCompare>
+  diffRef(cwd: string, ref: string, path: string, signal?: AbortSignal): Promise<{ diff: string; truncated: boolean }>
 }
 
 type Caller = (
@@ -106,5 +111,8 @@ export function createGitApi(call: Caller): GitApi {
     stashDrop: (cwd, index, signal) => unwrap(call, GIT_RPC.stashDrop, { cwd, index }, signal),
     undoCommit: (cwd, signal) => unwrap(call, GIT_RPC.undoCommit, { cwd }, signal),
     showFile: (cwd, hash, path, signal) => unwrap(call, GIT_RPC.showFile, { cwd, hash, path }, signal),
+    conflictResolve: (cwd, path, resolution, signal) => unwrap(call, GIT_RPC.conflictResolve, { cwd, path, resolution }, signal),
+    branchCompare: (cwd, ref, signal) => unwrap(call, GIT_RPC.branchCompare, { cwd, ref }, signal),
+    diffRef: (cwd, ref, path, signal) => unwrap(call, GIT_RPC.diffRef, { cwd, ref, path }, signal),
   }
 }

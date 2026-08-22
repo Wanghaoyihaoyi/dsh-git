@@ -108,6 +108,15 @@ export function UndoIcon(props: IconProps) {
   )
 }
 
+/** Compare branches (two arrows). */
+export function CompareIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M7 3 4 6l3 3L8.05 7.95 6.56 6.44H9a3.5 3.5 0 0 1 0 7H6v1.5h3a5 5 0 0 0 0-10H6.56l1.49-1.49L7 3Zm4.95 8.55L10 10l1.05-1.05L12.44 10.56H11a5 5 0 0 1-3-1v1.7A5 5 0 0 0 11 12h1.44l-1.49-1.45 1-1.05 2.05 1.5Z" />
+    </Svg>
+  )
+}
+
 /** Stash (box with arrow). */
 export function StashIcon(props: IconProps) {
   return (

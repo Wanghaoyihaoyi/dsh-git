@@ -22,12 +22,31 @@ type State =
   | { status: 'error'; message: string }
   | { status: 'ok'; data: GitDiffResult }
 
-function lineClass(line: string): string | undefined {
+export function lineClass(line: string): string | undefined {
   if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('@@')) return 'dshgit-diff-hunk'
   if (line.startsWith('+')) return 'dshgit-diff-add'
   if (line.startsWith('-')) return 'dshgit-diff-del'
   if (line.startsWith('diff ') || line.startsWith('index ') || line.startsWith('new file') || line.startsWith('deleted file')) return 'dshgit-diff-meta'
   return undefined
+}
+
+/** +N −M counts for the diff header (excludes +++/--- and hunk lines). */
+function diffStats(diff: string, content: string | undefined): { add: number; del: number } | null {
+  if (diff !== '') {
+    let add = 0
+    let del = 0
+    for (const line of diff.split('\n')) {
+      if (line.startsWith('+++') || line.startsWith('---')) continue
+      if (line.startsWith('+')) add++
+      else if (line.startsWith('-')) del++
+    }
+    return { add, del }
+  }
+  if (content !== undefined) {
+    // untracked: entire file is an addition
+    return { add: content.split('\n').length - (content.endsWith('\n') ? 1 : 0), del: 0 }
+  }
+  return null
 }
 
 export function DiffView({ git, cwd, path, staged, visible, onClose, t }: DiffViewProps) {
@@ -79,6 +98,16 @@ export function DiffView({ git, cwd, path, staged, visible, onClose, t }: DiffVi
           {path}
           {staged ? ` · ${t('stagedChanges')}` : ` · ${t('changes')}`}
         </span>
+        {state.status === 'ok' ? (() => {
+          const stats = diffStats(state.data.diff, state.data.content)
+          if (stats === null) return null
+          return (
+            <span className="dshgit-diff-stats">
+              <span className="dshgit-diff-stat-add">+{stats.add}</span>
+              <span className="dshgit-diff-stat-del">−{stats.del}</span>
+            </span>
+          )
+        })() : null}
         <button type="button" className="dshgit-diff-close" title={t('close')} onClick={onClose}>
           <span style={{ fontSize: 12 }}>✕</span>
         </button>

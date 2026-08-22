@@ -38,6 +38,9 @@ export const GIT_RPC = {
   stashDrop: 'git/stashDrop',
   undoCommit: 'git/undoCommit',
   showFile: 'git/showFile',
+  conflictResolve: 'git/conflictResolve',
+  branchCompare: 'git/branchCompare',
+  diffRef: 'git/diffRef',
 } as const
 
 export type GitEndpoint = (typeof GIT_RPC)[keyof typeof GIT_RPC]
@@ -119,6 +122,8 @@ export interface GitStatus {
   unpublished: boolean
   staged: GitFile[]
   unstaged: GitFile[]
+  /** Files with merge conflicts (index letter U, or both letters U). */
+  conflicted: GitFile[]
   /** The default remote (name + url), when one is configured. */
   remote?: GitRemote
 }
@@ -131,6 +136,7 @@ export const EMPTY_STATUS: GitStatus = {
   unpublished: false,
   staged: [],
   unstaged: [],
+  conflicted: [],
 }
 
 /** Common request shape: the client always names the working directory. */
@@ -277,4 +283,35 @@ export interface GitShowFileResult {
   binary: boolean
   tooLarge: boolean
   size: number
+}
+
+/** Conflict resolution strategy for one path. */
+export type ConflictResolution = 'ours' | 'theirs'
+
+export interface ConflictResolveRequest extends GitRpcRequest {
+  path: string
+  resolution: ConflictResolution
+}
+
+/** Branch-vs-branch comparison summary. */
+export interface GitBranchCompare {
+  /** ref the comparison was made against (the base). */
+  base: string
+  /** Commits on HEAD not on base. */
+  ahead: number
+  /** Commits on base not on HEAD. */
+  behind: number
+  /** Name-status changes of base...HEAD. */
+  files: GitFileChange[]
+}
+
+export interface BranchCompareRequest extends GitRpcRequest {
+  /** Base ref (branch or tag or commit) to compare HEAD against. */
+  ref: string
+}
+
+export interface DiffRefRequest extends GitRpcRequest {
+  /** Base ref. */
+  ref: string
+  path: string
 }
