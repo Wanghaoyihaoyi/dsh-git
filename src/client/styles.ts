@@ -16,7 +16,7 @@ export const PANEL_CSS = `
 .dshgit-foot-active{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .dshgit-foot-wide{justify-content:flex-start}
 .dshgit-foot-label{flex:1;text-align:left}
-.dshgit-panel{width:100%;height:100%;display:flex;flex-direction:column}
+.dshgit-panel{width:100%;max-width:360px;height:100%;display:flex;flex-direction:column;box-sizing:border-box}
 .dshgit-root-floating{position:fixed;inset:0;pointer-events:none;z-index:20}
 .dshgit-panel-floating{position:absolute;top:0;right:0;bottom:0;width:320px;pointer-events:auto;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:14px;border-left:1px solid var(--dsw-alias-border-l3)}
 .dshgit-header{flex:none;padding:12px 12px 0;position:relative;border-bottom:1px solid transparent}

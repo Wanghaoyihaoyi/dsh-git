@@ -591,11 +591,7 @@ export function GitPanel({ git, useWorkspaces, useSessions, closeGit, openGit, m
           </button>
         </div>
 
-        {!hasDetailsSession ? (
-          <div className="dshgit-empty">
-            <div>{t('emptySessionHint')}</div>
-          </div>
-        ) : !cwd ? (
+        {!cwd ? (
           <div className="dshgit-empty">{t('noWorkspaceOpened')}</div>
         ) : view === 'files' ? (
           <div className="dshgit-body dshgit-body-files">
