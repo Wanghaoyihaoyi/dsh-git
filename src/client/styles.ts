@@ -196,11 +196,11 @@ export const PANEL_CSS = `
 .dshgit-fs-dir-row{display:flex;align-items:center;gap:6px;width:100%;min-width:0;box-sizing:border-box;border:none;background:transparent;color:var(--dsw-alias-label-primary);cursor:pointer;font-family:inherit;font-size:13px;text-align:left;padding-top:5px;padding-bottom:5px}
 .dshgit-fs-dir-row:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .dshgit-fs-caret{flex:none;width:10px;font-size:10px;color:var(--dsw-alias-label-secondary);text-align:center}
-.dshgit-fs-diricon{flex:none;font-size:12px}
+.dshgit-fs-diricon{flex:none;display:inline-flex;align-items:center}
 .dshgit-fs-file{display:flex;align-items:center;gap:6px;width:100%;min-width:0;box-sizing:border-box;border:none;background:transparent;color:var(--dsw-alias-label-primary);cursor:pointer;font-family:inherit;font-size:13px;text-align:left;padding-top:5px;padding-bottom:5px}
 .dshgit-fs-file:hover{background:var(--dsw-alias-interactive-bg-hover)}
 .dshgit-fs-file-selected{background:var(--dsw-alias-interactive-bg-active)}
-.dshgit-fs-fileicon{flex:none;display:inline-flex;align-items:center;font-size:12px}
+.dshgit-fs-fileicon{flex:none;display:inline-flex;align-items:center}
 .dshgit-fs-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
 .dshgit-fs-size{flex:none;color:var(--dsw-alias-label-secondary);font-size:11px}
 .dshgit-fs-note{padding:6px 10px;color:var(--dsw-alias-label-secondary);font-size:12px}

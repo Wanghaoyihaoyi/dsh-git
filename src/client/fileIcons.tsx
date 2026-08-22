@@ -1,19 +1,24 @@
-// File-type icons for the source-control file rows. Each extension maps to a
-// category, rendered as a small SVG glyph (no text) with a category color; the
-// filename itself already carries the extension, so the icon is a uniform,
-// recognizable shape.
+// File-type icons for source-control rows and the workspace file browser.
+//
+// Glyphs are Lucide-style 24×24 stroke icons (ISC, https://lucide.dev) scaled
+// down to 16px — round caps, joined corners, 2u stroke — with a category
+// palette tuned to the panel's existing status colors (blue #4a86c8, green
+// #1f9d55, purple #8a63d2/#9c27b0, amber #d99a2b, red #e0554f, gold #c9a227).
+// Each extension maps to a category; the filename itself carries the
+// extension, so the icon stays a uniform, recognizable shape.
 import type { ReactNode } from 'react'
 
-type IconKind = 'file' | 'code' | 'image' | 'media' | 'archive' | 'doc' | 'json'
+type IconKind = 'file' | 'code' | 'image' | 'audio' | 'video' | 'archive' | 'doc' | 'json'
 
 const KIND_COLORS: Record<IconKind, string> = {
   file: 'currentColor',
   code: '#4a86c8',
-  image: '#4caf50',
-  media: '#9c27b0',
+  image: '#1f9d55',
+  audio: '#9c27b0',
+  video: '#e0554f',
   archive: '#d99a2b',
   doc: '#4d9cd0',
-  json: '#8bc34a',
+  json: '#c9a227',
 }
 
 const TYPES: Record<string, IconKind> = {
@@ -31,13 +36,16 @@ const TYPES: Record<string, IconKind> = {
   // image
   png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', svg: 'image', webp: 'image',
   ico: 'image', bmp: 'image', avif: 'image', tiff: 'image',
-  // media
-  mp3: 'media', wav: 'media', ogg: 'media', flac: 'media', m4a: 'media', aac: 'media',
-  mp4: 'media', webm: 'media', mov: 'media', avi: 'media', mkv: 'media', m4v: 'media',
+  // audio
+  mp3: 'audio', wav: 'audio', ogg: 'audio', flac: 'audio', m4a: 'audio', aac: 'audio', opus: 'audio', aiff: 'audio',
+  // video
+  mp4: 'video', webm: 'video', mov: 'video', avi: 'video', mkv: 'video', m4v: 'video',
   // archive
   zip: 'archive', tar: 'archive', gz: 'archive', tgz: 'archive', rar: 'archive', '7z': 'archive', bz2: 'archive', xz: 'archive',
   // doc
-  md: 'doc', markdown: 'doc', txt: 'doc', rst: 'doc', adoc: 'doc', pdf: 'doc', csv: 'doc', tsv: 'doc', tex: 'doc', bib: 'doc', ipynb: 'doc',
+  md: 'doc', markdown: 'doc', txt: 'doc', rst: 'doc', adoc: 'doc', pdf: 'doc',
+  csv: 'doc', tsv: 'doc', tex: 'doc', bib: 'doc', ipynb: 'doc',
+  doc: 'doc', docx: 'doc', ppt: 'doc', pptx: 'doc', xls: 'doc', xlsx: 'doc',
   // json / structured data / config
   json: 'json', jsonc: 'json', json5: 'json', yml: 'json', yaml: 'json', toml: 'json', xml: 'json',
   ini: 'json', cfg: 'json', conf: 'json', env: 'json', properties: 'json', lock: 'json',
@@ -53,60 +61,81 @@ function extensionOf(path: string): string {
   return base.slice(dot + 1).toLowerCase()
 }
 
+// Lucide-style file shell (24×24), reused by every file glyph.
+const FILE_SHELL = (
+  <>
+    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+    <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+  </>
+)
+
 function Glyph({ kind, color }: { kind: IconKind; color: string }) {
-  const line = { fill: 'none', stroke: color, strokeWidth: 1.3, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const stroke = { fill: 'none' as const, stroke: color, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   switch (kind) {
     case 'code':
       return (
-        <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden="true">
-          <path {...line} d="M4 1.5h5.5L13 5v9.5H4z" />
-          <path {...line} d="M9.5 1.5V5H13" />
-          <path {...line} d="M6.1 7.4 4.4 9l1.7 1.6M9.9 7.4l1.7 1.6L9.9 10.6" />
+        <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true" {...stroke}>
+          {FILE_SHELL}
+          <path d="m10 13-2 2 2 2" />
+          <path d="m14 17 2-2-2-2" />
         </svg>
       )
     case 'image':
       return (
-        <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden="true">
-          <rect x="2" y="3" width="12" height="10" rx="1.5" fill="none" stroke={color} strokeWidth="1.3" />
-          <circle cx="5.5" cy="6" r="1" fill={color} />
-          <path d="M3 12l3.2-3.2 2.3 2.3L10.8 8 13 10.4" fill="none" stroke={color} strokeWidth="1.3" strokeLinejoin="round" />
+        <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true" {...stroke}>
+          {FILE_SHELL}
+          <circle cx="10" cy="12" r="2" />
+          <path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L11 20" />
         </svg>
       )
-    case 'media':
+    case 'audio':
       return (
-        <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden="true">
-          <circle cx="8" cy="8" r="6" fill="none" stroke={color} strokeWidth="1.3" />
-          <path d="M6.7 5.9v4.2L10.4 8z" fill={color} />
+        <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true" {...stroke}>
+          <path d="M17.5 22h.5a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3" />
+          <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+          <path d="M2 19a2 2 0 1 1 4 0v1a2 2 0 1 1-4 0v-4a6 6 0 0 1 12 0v4a2 2 0 1 1-4 0v-1a2 2 0 1 1 4 0" />
+        </svg>
+      )
+    case 'video':
+      return (
+        <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true" {...stroke}>
+          {FILE_SHELL}
+          <path d="m10 11 5 3-5 3v-6Z" />
         </svg>
       )
     case 'archive':
       return (
-        <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M2 5.2 8 2l6 3.2-6 3.2z" fill="none" stroke={color} strokeWidth="1.3" strokeLinejoin="round" />
-          <path d="M2 5.2V11L8 14l6-3V5.2" fill="none" stroke={color} strokeWidth="1.3" strokeLinejoin="round" />
-          <path d="M8 8.4V14" stroke={color} strokeWidth="1.3" />
+        <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true" {...stroke}>
+          <path d="M10 12v-1" />
+          <path d="M10 18v-2" />
+          <path d="M10 7V6" />
+          <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+          <path d="M15.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v16a2 2 0 0 0 .274 1.01" />
+          <circle cx="10" cy="20" r="2" />
         </svg>
       )
     case 'doc':
       return (
-        <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden="true">
-          <path {...line} d="M4 1.5h5.5L13 5v9.5H4z" />
-          <path {...line} d="M9.5 1.5V5H13" />
-          <path {...line} d="M5.5 8h5M5.5 10h5M5.5 12h3" />
+        <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true" {...stroke}>
+          {FILE_SHELL}
+          <path d="M10 9H8" />
+          <path d="M16 13H8" />
+          <path d="M16 17H8" />
         </svg>
       )
     case 'json':
       return (
-        <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M10.3 2.6c-1.2 0-1.7.4-1.7 1.5v1.2c0 .7-.3 1-1 1 .7 0 1 .3 1 1v1.2c0 1.1.5 1.5 1.7 1.5M5.7 2.6c1.2 0 1.7.4 1.7 1.5v1.2c0 .7.3 1 1 1-.7 0-1 .3-1 1v1.2c0 1.1-.5 1.5-1.7 1.5" fill="none" stroke={color} strokeWidth="1.3" strokeLinecap="round" />
+        <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true" {...stroke}>
+          {FILE_SHELL}
+          <path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1" />
+          <path d="M14 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1" />
         </svg>
       )
     case 'file':
     default:
       return (
-        <svg width={16} height={16} viewBox="0 0 16 16" aria-hidden="true">
-          <path {...line} d="M4 1.5h5.5L13 5v9.5H4z" />
-          <path {...line} d="M9.5 1.5V5H13" />
+        <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true" {...stroke}>
+          {FILE_SHELL}
         </svg>
       )
   }
@@ -115,4 +144,27 @@ function Glyph({ kind, color }: { kind: IconKind; color: string }) {
 export function fileIcon(path: string): ReactNode {
   const kind = TYPES[extensionOf(path)] ?? 'file'
   return <Glyph kind={kind} color={KIND_COLORS[kind]} />
+}
+
+/** Folder glyph for the file browser (theme-colored, closed/open). */
+export function folderIcon(open: boolean): ReactNode {
+  return (
+    <svg
+      width={15}
+      height={15}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {open ? (
+        <path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" />
+      ) : (
+        <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+      )}
+    </svg>
+  )
 }

@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { FsEntry, FsReadResult } from '../shared/rpc.js'
 import type { GitApi } from './rpc.js'
-import { fileIcon } from './fileIcons.js'
+import { fileIcon, folderIcon } from './fileIcons.js'
 
 function formatSize(bytes: number | undefined): string | undefined {
   if (bytes === undefined) return undefined
@@ -187,7 +187,7 @@ function FsDir({ git, cwd, path, name, depth, defaultOpen, onOpenFile, selectedP
           title={path || name}
         >
           <span className="dshgit-fs-caret">{loading ? '◌' : open ? '▾' : '▸'}</span>
-          <span className="dshgit-fs-diricon">{open ? '📂' : '📁'}</span>
+          <span className="dshgit-fs-diricon">{folderIcon(open)}</span>
           <span className="dshgit-fs-name">{name}</span>
         </button>
       ) : null}
