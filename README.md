@@ -106,10 +106,21 @@ src/
 ## Publish
 
 ```sh
-npm publish
+npm run build            # rebuild lib/ before every publish
+npm publish --registry=https://registry.npmjs.org
 ```
 
+Notes:
+- Publish requires the **official registry** (`--registry=https://registry.npmjs.org`); a local `registry.npmmirror.com` config will send `npm adduser` to CNPM, which does not allow public registration.
+- With 2FA enabled, npm prompts for a browser approval on each publish — approve, press Enter, done.
+- Only `lib/`, `cordis.patch.yml`, `README.md`, `LICENSE` and `package.json` are published (see `files`); source is not.
+- The self-update logic (`update.ts`) points at this package name; keep it in sync on any rename.
+
 Tag the GitHub repo with [`dsh-plugin`](https://github.com/topics/dsh-plugin).
+
+## Release log
+
+- **0.3.0** (2026-08) — republished as `@wanghaoyihaoyi/dsh-git` (maintainer: Wanghaoyihaoyi; MIT, dual copyright 陈佳宝 + Wanghaoyihaoyi). Fork of `@mojiexuan/dsh-git` with the workspace file browser, one-file diff previews, tabbed Git/Files panel, and remote management menu.
 
 ## License
 

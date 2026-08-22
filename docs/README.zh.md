@@ -104,10 +104,21 @@ src/
 ## 发布
 
 ```sh
-npm publish
+npm run build            # 每次发布前重新构建 lib/
+npm publish --registry=https://registry.npmjs.org
 ```
 
+注意事项：
+- 发布必须走**官方 registry**（`--registry=https://registry.npmjs.org`）；本机 `registry.npmmirror.com` 配置会让 `npm adduser` 跳到 CNPM，CNPM 不允许公开注册。
+- 开启 2FA 后每次发布需在浏览器点授权——批准后回终端按 Enter 即完成。
+- 只发布 `lib/`、`cordis.patch.yml`、`README.md`、`LICENSE` 与 `package.json`（见 `files` 白名单），不发布源码。
+- 自更新逻辑（`update.ts`）指向本包名，改名时务必同步。
+
 给 GitHub 仓库打上 [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic。
+
+## 发布记录
+
+- **0.3.0**（2026-08）——以 `@wanghaoyihaoyi/dsh-git` 名义重新发布（维护者：Wanghaoyihaoyi；MIT，双版权 陈佳宝 + Wanghaoyihaoyi）。Fork 自 `@mojiexuan/dsh-git`，新增工作区文件浏览器、单文件 diff 预览、Git/文件 双 tab 面板与远程管理菜单。
 
 ## 许可证
 
